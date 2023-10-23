@@ -1,0 +1,17 @@
+fastapi
+uvicorn
+sqlalchemy
+passlib
+bcrypt
+python-jose
+python-multipart
+numpy
+pandas
+matplotlib
+yfinance
+alpaca-py
+schedule
+pandas_ta
+backtesting
+pytz
+datetime
