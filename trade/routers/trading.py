@@ -60,9 +60,7 @@ def trading():
           print(orders)
 
      def strategy1_for_all():
-          print("In strategy 1")
           users = session.query(models.Users).all()
-          print("Fetched all users")
           for i in users:
                strategy1(i.api_key_public, i.api_key_private, i.base_url)
 
@@ -78,7 +76,6 @@ def trading():
      # Start the scheduler
      while True:
           try:
-               print("Running")
                # Check if the current day is a weekday (Monday to Friday)
                today = datetime.datetime.now().strftime("%A")
                if today in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]:

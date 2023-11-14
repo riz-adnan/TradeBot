@@ -23,12 +23,14 @@ def show_all_users(db: Session):
     return users
 
 def update_user(id: int, request: schemas.UpdateUser, db: Session):
-    user = db.query(models.Users).filter(models.Users.id == id).first()
-    if not user:
+    user = db.query(models.Users).filter(models.Users.id == id)
+    if not user.first():
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail = f"User with id {id} not found")
-    user.update(email = request.email, password = Hash.bcrypt(request.password), api_key_public = request.api_key_public, api_key_private = request.api_key_private, base_url = request.base_url)
+    new_details = dict(request)
+    new_details['password'] = Hash.bcrypt(request.password)
+    user.update(new_details)
     db.commit()
-    return 'updated'
+    return db.query(models.Users).filter(models.Users.id == id).first()
 
 def show_user_detail(id: int, db: Session):
     users = db.query(models.Users).filter(models.Users.id == id).first()
