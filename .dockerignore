@@ -1,0 +1,7 @@
+fastapi-env/
+__pycache__/
+.github
+
+*.env
+*.env.*
+env.*
