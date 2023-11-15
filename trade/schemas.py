@@ -94,7 +94,6 @@ class ShowUser(BaseModel):
         orm_model = True
 
 class UserDetails(BaseModel):
-    id: int
     user_name: str
     email: str
     api_key_private: str

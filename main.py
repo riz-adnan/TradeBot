@@ -1,6 +1,5 @@
 from fastapi import FastAPI, Depends
-from trade import models
-from trade.database import engine, SessionLocal
+# from trade.database import engine, SessionLocal
 from trade.routers import user, authentication, trading
 # from trade.routers import investment, sip, sop, admin
 import market_connection as mc1
@@ -11,13 +10,12 @@ import datetime
 import schedule
 import time
 from sqlalchemy.orm import Session
-from trade import models, schemas, database
+from trade import schemas, mongodb
 import pytz
 
 
 app = FastAPI()
-
-models.Base.metadata.create_all(engine)
+# models.Base.metadata.create_all(engine)
 
 app.include_router(authentication.router)
 app.include_router(user.router)

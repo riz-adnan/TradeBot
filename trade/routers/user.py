@@ -1,6 +1,6 @@
 from typing import List
 from fastapi import APIRouter, Depends, status
-from .. import database, schemas, models, oauth2
+from .. import schemas, oauth2
 from sqlalchemy.orm import Session
 from ..repository import user
 
@@ -8,33 +8,32 @@ router = APIRouter(
     prefix = '/user',
     tags = ['user']
 )
-get_db = database.get_db
 
 
 @router.post('/', response_model = schemas.ShowUser, status_code = status.HTTP_201_CREATED)
-def create_user(request: schemas.GetUser, db: Session = Depends(get_db)):
-    return user.create_user(request, db)
+async def create_user(request: schemas.GetUser):
+    return await user.create_user(request)
 
-@router.get('/{id}', response_model = schemas.ShowUser, status_code = status.HTTP_200_OK)
-def show_user(id: int, db: Session = Depends(get_db)):
-    return user.show_one_user(id, db)
+@router.get('/{user_name}', response_model = schemas.ShowUser, status_code = status.HTTP_200_OK)
+async def show_user(user_name: str):
+    return await user.show_one_user(user_name)
 
 @router.get('/', response_model = List[schemas.ShowUser], status_code = status.HTTP_200_OK)
-def all_users(db: Session = Depends(get_db)):
-    return user.show_all_users(db)
+async def all_users(current_user: schemas.GetUser = Depends(oauth2.get_current_user)):
+    return await user.show_all_users()
 
-@router.put('/{id}', response_model = schemas.ShowUser, status_code = status.HTTP_202_ACCEPTED)
-def update_user(id: int, request: schemas.UpdateUser, db: Session = Depends(get_db), current_user: schemas.GetUser = Depends(oauth2.get_current_user)):
-    return user.update_user(id, request, db)
+@router.put('/{user_name}', response_model = schemas.ShowUser, status_code = status.HTTP_202_ACCEPTED)
+async def update_user(user_name: str, request: schemas.UpdateUser, current_user: schemas.GetUser = Depends(oauth2.get_current_user)):
+    return await user.update_user(user_name, request)
 
-@router.delete('/{id}', status_code = status.HTTP_204_NO_CONTENT)
-def delete_user(id: int, db: Session = Depends(get_db), current_user: schemas.GetUser = Depends(oauth2.get_current_user)):
-    return user.delete_user(id, db)
+@router.delete('/{user_name}', status_code = status.HTTP_204_NO_CONTENT)
+async def delete_user(user_name: str, current_user: schemas.GetUser = Depends(oauth2.get_current_user)):
+    return await user.delete_user(user_name)
 
-@router.get('/{id}/details', response_model = schemas.UserDetails, status_code = status.HTTP_200_OK)
-def user_detail(id: int, db: Session = Depends(get_db), current_user: schemas.GetUser = Depends(oauth2.get_current_user)):
-    return user.show_user_detail(id, db)
+@router.get('/{user_name}/details', response_model = schemas.UserDetails, status_code = status.HTTP_200_OK)
+async def user_detail(user_name: str, current_user: schemas.GetUser = Depends(oauth2.get_current_user)):
+    return await user.show_user_detail(user_name)
 
 @router.get('/', response_model = List[schemas.UserDetails], status_code = status.HTTP_200_OK)
-def all_users_detail(db: Session = Depends(get_db), current_user: schemas.GetUser = Depends(oauth2.get_current_user)):
-    return user.show_all_users_detail(db)
+async def all_users_detail(current_user: schemas.GetUser = Depends(oauth2.get_current_user)):
+    return await user.show_all_users_detail()

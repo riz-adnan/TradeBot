@@ -1,16 +1,15 @@
 from typing import List
 from fastapi import APIRouter, Depends, status
-from .. import database, schemas, models, oauth2
-
+from .. import schemas, oauth2
 import datetime
 import pytz
 import schedule
 import time
 from datetime import date, timedelta
 from sqlalchemy.orm import Session
-from .. import models, schemas
-from ..database import SessionLocal, engine
-from .. import models, schemas
+from .. import schemas
+# from ..database import SessionLocal, engine
+from .. import mongodb
 import market_connection as mc1
 import market_connection2 as mc2
 import yfinance as yf
@@ -21,8 +20,8 @@ router = APIRouter(
     tags = ['trading']
 )
 
-get_db = database.get_db
-
+users = mongodb.users
+user_helper = mongodb.user_helper
 
 
 # -------------------------- Trade --------------------------
@@ -32,7 +31,7 @@ def trading():
      start_time = datetime.time(9, 30)
      end_time = datetime.time(15, 30)
      new_york_timezone = pytz.timezone('America/New_York')
-     session = SessionLocal()
+     # session = SessionLocal()
 
      dataNames =["AAPL","MSFT","AMZN","GOOG","META","TSLA","NVDA","PYPL","INTC","NFLX","ADBE","CSCO","CMCSA","PEP","AVGO","TXN","QCOM","ADP","COST","TMUS"]
 
@@ -59,15 +58,19 @@ def trading():
                     break
           print(orders)
 
-     def strategy1_for_all():
-          users = session.query(models.Users).all()
-          for i in users:
-               strategy1(i.api_key_public, i.api_key_private, i.base_url)
+     async def strategy1_for_all():
+          users_list = []
+          async for user in users.find():
+               users_list.append(user_helper(user))
+          for i in users_list:
+               strategy1(i['api_key_public'], i['api_key_private'], i['base_url'])
 
-     def strategy2_for_all():
-          users = session.query(models.Users).all()
-          for i in users:
-               strategy2(i.api_key_public, i.api_key_private, i.base_url)
+     async def strategy2_for_all():
+          users_list = []
+          async for user in users.find():
+               users_list.append(user_helper(user))
+          for i in users_list:
+               strategy2(i['api_key_public'], i['api_key_private'], i['base_url'])
 
      # Schedule the job to run every 5 minutes during market hours (Monday to Friday)
      schedule.every(5).seconds.do(strategy1_for_all)

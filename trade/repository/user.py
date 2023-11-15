@@ -1,53 +1,78 @@
 from sqlalchemy.orm import Session
-from .. import models, schemas
+from .. import mongodb, schemas
 from fastapi import HTTPException, status
 from ..hashing import Hash
+from bson.objectid import ObjectId
 
-def create_user(request: schemas.GetUser, db: Session):
-    new_user = models.Users(user_name = request.username, email = request.email, password = Hash.bcrypt(request.password), api_key_public = request.api_key_public, api_key_private = request.api_key_private, base_url = request.base_url)
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    return new_user
+users = mongodb.users
+user_helper = mongodb.user_helper
 
-def show_one_user(id: int, db: Session):
-    user = db.query(models.Users).filter(models.Users.id == id).first()
+async def create_user(request: schemas.GetUser):
+    hashed_password = Hash.bcrypt(request.password)
+    user = {
+        "user_name": request.username,
+        "email": request.email,
+        "password": hashed_password,
+        "api_key_private": request.api_key_private,
+        "api_key_public": request.api_key_public,
+        "base_url": request.base_url,
+    }
+    if await users.find_one({"user_name": request.username}):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"User with name {request.username} already registered")
+    if await users.find_one({"email": request.email}):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"User with email {request.email} already registered")
+    if await users.find_one({"api_key_private": request.api_key_private}):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"User with the given private api key already registered")
+    if await users.find_one({"api_key_public": request.api_key_public}):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"User with api key public {request.api_key_public} already registered")
+    result = await users.insert_one(user)
+    new_user = await users.find_one({"_id": result.inserted_id})
+    return user_helper(new_user)
+
+async def show_one_user(user_name: str):
+    user = await users.find_one({"user_name": user_name})
     if not user:
-        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail = f"User with id {id} not found")
-    return user
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"User with username {user_name} not found")
+    return user_helper(user)
 
-def show_all_users(db: Session):
-    users = db.query(models.Users).all()
-    if not users:
+async def show_all_users():
+    users_list = []
+    async for user in users.find():
+        users_list.append(user_helper(user))
+    if not users_list:
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail = f"No users found")
-    return users
+    return users_list
 
-def update_user(id: int, request: schemas.UpdateUser, db: Session):
-    user = db.query(models.Users).filter(models.Users.id == id)
-    if not user.first():
-        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail = f"User with id {id} not found")
+async def update_user(user_name: str, request: schemas.UpdateUser):
+    user = await users.find_one({"user_name": user_name})
+    if not user:
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail = f"User with username {user_name} not found.")
     new_details = dict(request)
     new_details['password'] = Hash.bcrypt(request.password)
-    user.update(new_details)
-    db.commit()
-    return db.query(models.Users).filter(models.Users.id == id).first()
+    updated_details = await users.update_one({"user_name": user_name}, {"$set": new_details})
+    if not updated_details:
+        raise HTTPException(status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, detail = f"Unable to update user with username {user_name}")
+    updated_details = await users.find_one({"user_name": user_name})
+    return user_helper(updated_details)
 
-def show_user_detail(id: int, db: Session):
-    users = db.query(models.Users).filter(models.Users.id == id).first()
-    if not users:
+async def show_user_detail(user_name: str):
+    user = await users.find_one({"user_name": user_name})
+    if not user:
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail = f"No users found")
-    return users
+    return user_helper(user)
 
-def delete_user(id: int, db: Session):
-    user = db.query(models.Users).filter(models.Users.id == id)
-    if not user.first():
+async def delete_user(user_name: str):
+    user = await users.find_one({"user_name": user_name})
+    if not user:
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail = f"User with id {id} not found")
-    user.delete(synchronize_session = False)
-    db.commit()
-    return 'done'
+    await users.delete_one({"user_name": user_name})
+    return 'Done'
 
-def show_all_users_detail(db: Session):
-    users = db.query(models.Users).all()
-    if not users:
+async def show_all_users_detail():
+    user_list = []
+    users = users.find()
+    async for user in users:
+        user_list.append(user_helper(user))
+    if not user_list:
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail = f"No users found")
-    return users
+    return user_list
