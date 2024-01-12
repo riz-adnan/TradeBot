@@ -13,7 +13,7 @@ user_helper = mongodb.user_helper
 
 @router.post('/login', status_code = status.HTTP_200_OK)
 async def login(request: OAuth2PasswordRequestForm = Depends()):
-    user = await users.find_one({"email": request.username})
+    user = users.find_one({"email": request.username})
     if not user:
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail = f'Invalid Credentials')
     if not Hash.verify(user['password'], request.password):

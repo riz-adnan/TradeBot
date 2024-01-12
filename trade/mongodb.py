@@ -1,16 +1,25 @@
-import motor.motor_asyncio
+from pymongo.mongo_client import MongoClient
+from pymongo.server_api import ServerApi
 import os
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field, EmailStr
 
 load_dotenv()
 mongo_uri = os.getenv("MONGO_URI")
-
 print("Connecting to MongoDB...")
-client = motor.motor_asyncio.AsyncIOMotorClient(mongo_uri)
+
+# Create a new client and connect to the server
+client = MongoClient(mongo_uri, server_api=ServerApi('1'))
+
+# Send a ping to confirm a successful connection
+try:
+    client.admin.command('ping')
+    print("Pinged your deployment. You successfully connected to MongoDB!")
+except Exception as e:
+    print(f'Unsuccessfull connection: \n{e}')
+
 database = client.trade
 users = database.get_collection("users")
-print("Connected to MongoDB!")
 
 
 class UserBase(BaseModel):
@@ -30,8 +39,8 @@ class User(UserBase):
     id: str = Field(..., alias="_id")
 
     class Config:
-        allow_population_by_field_name = True
-        schema_extra = {
+        populate_by_name = True
+        json_schema_extra = {
             "example": {
                 "user_name": "johndoe",
                 "email": "johndoe@example.com",
