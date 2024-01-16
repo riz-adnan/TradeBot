@@ -58,16 +58,16 @@ def trading():
                     break
           print(orders)
 
-     async def strategy1_for_all():
+     def strategy1_for_all():
           users_list = []
-          async for user in users.find():
+          for user in users.find():
                users_list.append(user_helper(user))
           for i in users_list:
                strategy1(i['api_key_public'], i['api_key_private'], i['base_url'])
 
-     async def strategy2_for_all():
+     def strategy2_for_all():
           users_list = []
-          async for user in users.find():
+          for user in users.find():
                users_list.append(user_helper(user))
           for i in users_list:
                strategy2(i['api_key_public'], i['api_key_private'], i['base_url'])
@@ -86,6 +86,7 @@ def trading():
                     now = datetime.datetime.now()
                     new_york_time = now.astimezone(new_york_timezone).time()
                     if start_time <= new_york_time <= end_time:
+                         print("Successfull able to do!")
                          schedule.run_pending()
           except Exception as e:
                print(f"An error occurred: {str(e)}")
