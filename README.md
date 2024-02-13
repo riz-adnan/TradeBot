@@ -121,7 +121,7 @@ We welcome contributions from the community. Feel free to submit bug reports, fe
 
 ## 🎓 Author
 
-<p>  <a href="https://github.com/riz-adnan"><b>Adnan Abbas Rizvi</b><a/><p/>
+<p>  <a href="https://github.com/riz-adnan"><b>Adnan Abbas Rizvi</b><a/> (Team Leader)<p/>
 <p> <a href="https://github.com/prakharmoses"><b>Prakhar Moses </b><a/></p>
 <p> <a href="https://github.com/cs21b037iittp"><b>Nandhavardhan </b><a/></p>
 
