@@ -1,113 +1,97 @@
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import pandas_ta as ta
 import yfinance as yf
 from alpaca.trading.client import TradingClient
 from alpaca.trading.requests import MarketOrderRequest
 from alpaca.trading.enums import OrderSide, TimeInForce
-from backtesting import Strategy, Backtest
-import pandas_ta as ta
+from sklearn.preprocessing import MinMaxScaler
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense, Dropout
 
-def create_client(API_KEY,API_SECRET,BASE_URL):
-    alpaca_client = TradingClient(API_KEY,API_SECRET,paper=True)
+def create_client(API_KEY, API_SECRET, BASE_URL):
+    alpaca_client = TradingClient(API_KEY, API_SECRET, paper=True)
     return alpaca_client
 
-
-def append_indicator_for_strategy(stock_data, backcandles):
-    stock_data["VWAP"]=ta.vwap(stock_data.High, stock_data.Low, stock_data.Close, stock_data.Volume)
-    stock_data['RSI']=ta.rsi(stock_data.Close, length=20)
+def append_indicators(stock_data):
+    stock_data["VWAP"] = ta.vwap(stock_data.High, stock_data.Low, stock_data.Close, stock_data.Volume)
+    stock_data['RSI'] = ta.rsi(stock_data.Close, length=20)
     my_bbands = ta.bbands(stock_data.Close, length=20, std=2.0)
-    stock_data=stock_data.join(my_bbands)
-
-    VWAPsignal = [0]*len(stock_data)
-
-    for row in range(backcandles, len(stock_data)):
-        upt = 1
-        dnt = 1
-        for i in range(row-backcandles, row+1):
-            if max(stock_data.Open.iloc[i], stock_data.Close.iloc[i])>=stock_data.VWAP.iloc[i]:
-                dnt=0
-            if min( stock_data.Open.iloc[i], stock_data.Close.iloc[i])<= stock_data.VWAP.iloc[i]:
-                upt=0
-        if upt==1 and dnt==1:
-            VWAPsignal[row]=3
-        elif upt==1:
-            VWAPsignal[row]=2
-        elif dnt==1:
-            VWAPsignal[row]=1
-
-    stock_data['VWAPSignal'] = VWAPsignal
+    stock_data = stock_data.join(my_bbands)
     return stock_data
 
+def prepare_data(stock_data, sequence_length):
+    stock_data = stock_data.dropna()
+    data = stock_data[['Close', 'RSI', 'VWAP', 'BBU_20_2.0', 'BBM_20_2.0', 'BBL_20_2.0']]
+    scaler = MinMaxScaler()
+    scaled_data = scaler.fit_transform(data)
+    
+    X = []
+    y = []
+    for i in range(sequence_length, len(scaled_data)):
+        X.append(scaled_data[i-sequence_length:i])
+        y.append(scaled_data[i, 0])  # Predict the Close price
 
-def TotalSignal(stock_data, l):
-    BBU_14_2_0 = stock_data.get('BBU_20_2.0', pd.Series([0.0]*len(stock_data)))[l]
-    if stock_data.VWAPSignal.iloc[l] == 2 and stock_data.Close.iloc[l] <= BBU_14_2_0 and stock_data.RSI.iloc[l] < 45:
-        return 2
-    if stock_data.VWAPSignal.iloc[l] == 1 and stock_data.Close.iloc[l] >= BBU_14_2_0 and stock_data.RSI.iloc[l] > 55:
-        return 1
-    return 0
+    X, y = np.array(X), np.array(y)
+    return X, y, scaler
 
+def build_lstm_model(input_shape):
+    model = Sequential()
+    model.add(LSTM(units=50, return_sequences=True, input_shape=input_shape))
+    model.add(Dropout(0.2))
+    model.add(LSTM(units=50, return_sequences=False))
+    model.add(Dropout(0.2))
+    model.add(Dense(units=25))
+    model.add(Dense(units=1))
+    
+    model.compile(optimizer='adam', loss='mean_squared_error')
+    return model
 
-def signal_generator(stock_data, backcandles):
-    TotSignal = [0] * len(stock_data)
-    for row in range(backcandles, len(stock_data)): 
-        TotSignal[row] = TotalSignal(stock_data, row)
+def train_model(model, X_train, y_train, epochs=50, batch_size=32):
+    model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, verbose=1)
+    return model
 
-    stock_data['TotalSignal'] = TotSignal
-    return stock_data
+def generate_predictions(model, data, scaler, sequence_length):
+    scaled_data = scaler.transform(data)
+    X_test = []
+    for i in range(sequence_length, len(scaled_data)):
+        X_test.append(scaled_data[i-sequence_length:i])
+    
+    X_test = np.array(X_test)
+    predictions = model.predict(X_test)
+    predictions = scaler.inverse_transform(np.concatenate((predictions, np.zeros((predictions.shape[0], data.shape[1]-1))), axis=1))[:, 0]
+    return predictions
 
-
-def pointposbreak(stock_data):
-    if stock_data['TotalSignal']==1:
-        return stock_data['High']+1e-4
-    elif stock_data['TotalSignal']==2:
-        return stock_data['Low']-1e-4
-    else:
-        return np.nan
-
-def breakpoint_generator(stock_data):
-    stock_data['pointposbreak'] = stock_data.apply(lambda row: pointposbreak(row), axis=1)
-    return stock_data
-
-
-def final_signal(stock_data):
-    dfpl = stock_data.copy()
-    dfpl['ATR']=ta.atr(dfpl.High, dfpl.Low, dfpl.Close, length=7)
-    return dfpl
-
-# def SIGNAL(dfpl):
-#     return dfpl.TotalSignal
-
-
-
-def placing_order(df, api, symbol):
+def placing_order(predictions, api, symbol, current_price, rsi):
     orders = []
-    signal = 1
-    slatr = 1.2*df.ATR.iloc[-1]
+    slatr = 1.2 * (max(predictions) - min(predictions))  # Example stop loss and take profit calculation
     TPSLRatio = 1.5
-    if signal==2 or df.RSI.iloc[-1]<=10:
-        sl1 = df.Close[-1] - slatr
-        tp1 = df.Close[-1] + slatr*TPSLRatio
-        order = MarketOrderRequest(
-			symbol = symbol,
-			qty = 1,
-            take_profit={'limit_price':tp1},
-            stop_loss={'stop_price': sl1},
-			side = OrderSide.BUY,
-			time_in_force = TimeInForce.DAY)
-        api.submit_order(order)
-        orders.append(order)
-    elif signal==1 or df.RSI.iloc[-1]>=90:         
-        sl1 = df.Close[-1] + slatr
-        tp1 = df.Close[-1] - slatr*TPSLRatio
-        order = MarketOrderRequest(
-            symbol = symbol, qty = 1,
-            take_profit={'limit_price':tp1},
-            stop_loss={'stop_price': sl1},
-            side = OrderSide.SELL,
-            time_in_force = 'gtc')
-        api.submit_order(order)
-        orders.append(order)
+    
+    for i in range(len(predictions)):
+        if predictions[i] > current_price and rsi <= 10:
+            sl1 = current_price - slatr
+            tp1 = current_price + slatr * TPSLRatio
+            order = MarketOrderRequest(
+                symbol=symbol,
+                qty=1,
+                take_profit={'limit_price': tp1},
+                stop_loss={'stop_price': sl1},
+                side=OrderSide.BUY,
+                time_in_force=TimeInForce.DAY)
+            api.submit_order(order)
+            orders.append(order)
+        elif predictions[i] < current_price and rsi >= 90:
+            sl1 = current_price + slatr
+            tp1 = current_price - slatr * TPSLRatio
+            order = MarketOrderRequest(
+                symbol=symbol,
+                qty=1,
+                take_profit={'limit_price': tp1},
+                stop_loss={'stop_price': sl1},
+                side=OrderSide.SELL,
+                time_in_force=TimeInForce.DAY)
+            api.submit_order(order)
+            orders.append(order)
     return orders
+
