@@ -1,4 +1,54 @@
+"use client"
+
+import React, { useState, useRef, useEffect } from 'react'
+import emailjs from 'emailjs-com'
+
 export default function Newsletter() {
+  const form = useRef<HTMLFormElement>(null);
+  const [name, setName] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
+  const [message, setMessage] = useState<string>('');
+  const [sending, setSending] = useState<boolean>(false);
+  const [sent, setSent] = useState<boolean>(false);
+
+  // Retrieve environment variables with default values
+  const SERVICE_ID = process.env.NEXT_PUBLIC_SERVICE_ID || '';
+  const TEMPLATE_ID = process.env.NEXT_PUBLIC_TEMPLATE_ID || '';
+  const PUBLIC_KEY = process.env.NEXT_PUBLIC_PUBLIC_KEY || '';
+
+  const handleContactSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSending(true);
+
+    if (form.current) {
+      emailjs
+        .sendForm(SERVICE_ID, TEMPLATE_ID, form.current, PUBLIC_KEY)
+        .then(
+          () => {
+            setSending(false);
+            setSent(true);
+            setName('');
+            setEmail('');
+            setMessage('');
+          },
+          (error) => {
+            setSending(false);
+            setSent(false);
+            console.log('Failed to send email. Error: ', error);
+          },
+        );
+    }
+  };
+
+  useEffect(() => {
+    if (sent) {
+      const timer = setTimeout(() => {
+        setSent(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [sent]);
+
   return (
     <section>
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
@@ -23,18 +73,74 @@ export default function Newsletter() {
 
             {/* CTA content */}
             <div className="mb-6 lg:mr-16 lg:mb-0 text-center lg:text-left lg:w-1/2">
-              <h3 className="h3 text-white mb-2">Stay in the loop</h3>
-              <p className="text-purple-200 text-lg">Join our newsletter to get top news before anyone else.</p>
+              <h3 className="h3 text-white mb-2">Contact Us</h3>
+              <p className="text-purple-200 text-lg">Write us something, like feedback or questions!</p>
             </div>
 
             {/* CTA form */}
-            <form className="w-full lg:w-1/2">
+            {/* <form className="w-full lg:w-1/2">
               <div className="flex flex-col sm:flex-row justify-center max-w-xs mx-auto sm:max-w-md lg:max-w-none">
                 <input type="email" className="w-full appearance-none bg-purple-700 border border-purple-500 focus:border-purple-300 rounded-sm px-4 py-3 mb-2 sm:mb-0 sm:mr-2 text-white placeholder-purple-400" placeholder="Your best email…" aria-label="Your best email…" />
                 <a className="btn text-purple-600 bg-purple-100 hover:bg-white shadow" href="#0">Subscribe</a>
               </div>
-              {/* Success message */}
-              {/* <p className="text-center lg:text-left lg:absolute mt-2 opacity-75 text-sm">Thanks for subscribing!</p> */}
+            </form> */}
+            <form ref={form} onSubmit={handleContactSubmit} className="space-y-4 w-[50rem]">
+              <div className='flex flex-row w-full justify-between gap-[2rem]'>
+                <div className='flex-grow'>
+                  <label htmlFor="user_name" className="block text-lg font-medium text-gray-900">
+                    Name
+                  </label>
+                  <input
+                    type="text"
+                    id="user_name"
+                    name="user_name"
+                    className="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900 dark:text-white p-2"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                </div>
+                <div className='flex-grow'>
+                  <label htmlFor="user_email" className="block text-lg font-medium text-gray-900">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    id="user_email"
+                    name="user_email"
+                    className="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900 dark:text-white p-2"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div>
+                <label htmlFor="message" className="block text-lg font-medium text-gray-900">
+                  Message
+                </label>
+                <textarea
+                  id="message"
+                  name="message"
+                  rows={4}
+                  className="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900 dark:text-white p-2"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                ></textarea>
+              </div>
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  className={`inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white ${sending ? 'bg-gray-500 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'
+                    } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
+                  disabled={sending}
+                >
+                  {sending ? 'Sending...' : 'Send Message'}
+                </button>
+              </div>
+              {sent && (
+                <div className="text-green-400 mt-2">
+                  Email sent successfully! We will get back to you soon.
+                </div>
+              )}
             </form>
 
           </div>

@@ -1,12 +1,18 @@
 import Link from 'next/link'
 import MobileMenu from './mobile-menu'
 import Image from 'next/image'
+import { usePathname } from 'next/navigation'
 
 // Importting Context
 import { useAccount } from '@/context/AccountContext'
 
 export default function Header() {
+  const pathname = usePathname()
   const { accountId, jwtToken } = useAccount()
+
+  function findActiveLink(path: string) {
+    return pathname === path ? 'text-yellow-400' : 'text-purple-600'
+  }
 
   return (
     <header className="absolute w-full z-30">
@@ -33,7 +39,7 @@ export default function Header() {
               <li>
                 <Link
                   href="/"
-                  className="font-medium text-purple-600 hover:text-gray-200 px-4 py-3 flex items-center transition duration-150 ease-in-out"
+                  className={`font-medium hover:text-gray-200 px-4 py-3 flex items-center transition duration-150 ease-in-out ${findActiveLink('/')}`}
                 >
                   Home
                 </Link>
@@ -41,7 +47,7 @@ export default function Header() {
               <li>
                 <Link
                   href="/wallet"
-                  className="font-medium text-purple-600 hover:text-gray-200 px-4 py-3 flex items-center transition duration-150 ease-in-out"
+                  className={`font-medium hover:text-gray-200 px-4 py-3 flex items-center transition duration-150 ease-in-out ${findActiveLink('/wallet')}`}
                 >
                   Wallet
                 </Link>
@@ -49,7 +55,7 @@ export default function Header() {
               <li>
                 <Link
                   href="/trade"
-                  className="font-medium text-purple-600 hover:text-gray-200 px-4 py-3 flex items-center transition duration-150 ease-in-out"
+                  className={`font-medium hover:text-gray-200 px-4 py-3 flex items-center transition duration-150 ease-in-out ${findActiveLink('/trade')}`}
                 >
                   Trade
                 </Link>
@@ -57,7 +63,7 @@ export default function Header() {
               <li>
                 <Link
                   href="/ourPrediction"
-                  className="font-medium text-purple-600 hover:text-gray-200 px-4 py-3 flex items-center transition duration-150 ease-in-out"
+                  className={`font-medium hover:text-gray-200 px-4 py-3 flex items-center transition duration-150 ease-in-out ${findActiveLink('/ourPrediction')}`}
                 >
                   Our Predictions
                 </Link>
@@ -65,7 +71,7 @@ export default function Header() {
               {jwtToken !== '' && <li>
                 <Link
                   href={`/profile/${accountId}`}
-                  className="font-medium text-purple-600 hover:text-gray-200 px-4 py-3 flex items-center transition duration-150 ease-in-out"
+                  className={`font-medium hover:text-gray-200 px-4 py-3 flex items-center transition duration-150 ease-in-out ${findActiveLink(`/profile/${accountId}`)}`}
                 >
                   Profile
                 </Link>
@@ -73,7 +79,7 @@ export default function Header() {
               {jwtToken === '' && <><li>
                 <Link
                   href="/signin"
-                  className="font-medium text-purple-600 hover:text-gray-200 px-4 py-3 flex items-center transition duration-150 ease-in-out"
+                  className="font-medium hover:text-gray-200 px-4 py-3 flex items-center transition duration-150 ease-in-out"
                 >
                   Sign in
                 </Link>
