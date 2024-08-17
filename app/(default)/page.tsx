@@ -1,5 +1,5 @@
 export const metadata = {
-  title: 'Trading Bot',
+  title: 'Home - Trading Bot',
   description: 'Page description',
 }
 

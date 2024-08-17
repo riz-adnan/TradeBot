@@ -29,11 +29,11 @@ export default function Hero() {
             <p className="text-xl text-gray-400 mb-8" data-aos="fade-up" data-aos-delay="200">Meet our cutting-edge trade bot: leveraging LSTM and advanced ML algorithms to predict market trends, execute trades, and maximize profits effortlessly. Invest smarter, profit more!</p>
             <div className="max-w-xs mx-auto sm:max-w-none sm:flex sm:justify-center">
               <div data-aos="fade-up" data-aos-delay="400">
-                <Link className="btn text-white bg-purple-600 hover:bg-purple-700 w-full mb-4 sm:w-auto sm:mb-0" href="#0">Start free trial</Link>
+                <Link className="btn text-white bg-purple-600 hover:bg-purple-700 w-20rem] mb-4 sm:w-[20rem] sm:mb-0 rounded-xl" href="/trade">Start Now</Link>
               </div>
-              <div data-aos="fade-up" data-aos-delay="600">
+              {/* <div data-aos="fade-up" data-aos-delay="600">
                 <Link className="btn text-white bg-gray-700 hover:bg-gray-800 w-full sm:w-auto sm:ml-4" href="#0">Learn more</Link>
-              </div>
+              </div> */}
             </div>
           </div>
 
