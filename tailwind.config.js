@@ -8,6 +8,20 @@ module.exports = {
   ],
   theme: {
     extend: {
+      keyframes: {
+        swing: {
+          '0%': { transform: 'rotate(10deg)' },
+          '100%': { transform: 'rotate(-10deg)' },
+        },
+        swinghair: {
+          '0%': { transform: 'rotate(6deg)' },
+          '100%': { transform: 'rotate(-6deg)' },
+        },
+      },
+      animation: {
+        swing: 'swing 1.3s ease-in-out infinite alternate',
+        swinghair: 'swinghair 1.3s ease-in-out infinite alternate',
+      },
       colors: {
         gray: {
           100: '#EBF1F5',
@@ -39,7 +53,8 @@ module.exports = {
       },
       fontFamily: {
         inter: ['var(--font-inter)', 'sans-serif'],
-        'architects-daughter': ['var(--font-architects-daughter)', 'sans-serif']
+        'architects-daughter': ['var(--font-architects-daughter)', 'sans-serif'],
+        bevan: ['Bevan', 'cursive'],
       },
       fontSize: {
         xs: '0.75rem',
@@ -69,6 +84,9 @@ module.exports = {
       },
       scale: {
         '98': '.98'
+      },
+      textShadow: {
+        'text': '2px 2px 3px rgba(255, 255, 255, 0.1)',
       },
     },
   },
