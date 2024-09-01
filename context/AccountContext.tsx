@@ -10,8 +10,8 @@ interface AccountContextType {
 const AccountContext = createContext<AccountContextType | undefined>(undefined);
 
 export const AccountProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [jwtToken, setJwtToken] = useState<string | null>(null);
-  const [accountId, setAccountId] = useState<string | null>(null);
+  const [jwtToken, setJwtToken] = useState<string | null>('');
+  const [accountId, setAccountId] = useState<string | null>('');
 
   return (
     <AccountContext.Provider value={{ jwtToken, accountId, setJwtToken, setAccountId }}>
