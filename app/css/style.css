@@ -9,6 +9,16 @@
 
 @import 'tailwindcss/utilities';
 
+html {
+    background-color: black;
+    color: white;
+}
+
+body {
+    background-color: black;
+    color: white;
+}
+
 /* Additional Tailwind directives: https://tailwindcss.com/docs/functions-and-directives/#responsive */
 @layer utilities {
     .rtl {
