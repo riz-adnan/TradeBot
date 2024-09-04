@@ -89,7 +89,7 @@ export default function Profile() {
 
                             <div id="social" className="flex flex-wrap justify-start items-center gap-4">
                                 <button onClick={() => setEdit(true)} className="bg-gray-800 rounded-lg p-5 w-64 flex items-center gap-2 text-white">
-                                    <svg className="feather feather-edit" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                                    <svg className="feather feather-edit" fill="none" height="24" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
                                     <span>Edit Profile</span>
                                 </button>
                             </div>
@@ -134,8 +134,8 @@ export default function Profile() {
                                 <div id="social" className="flex flex-wrap justify-start items-center gap-4">
                                     <button type='submit' className="bg-gray-800 rounded-lg p-5 w-64 flex items-center gap-2 text-white">
                                         <svg fill="#ffffff" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" width="24" height="24" viewBox="0 0 407.096 407.096" xmlSpace="preserve" stroke="#ffffff">
-                                            <g id="SVGRepo_bgCarrier" stroke-width="0" />
-                                            <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round" />
+                                            <g id="SVGRepo_bgCarrier" strokeWidth="0" />
+                                            <g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round" />
                                             <g id="SVGRepo_iconCarrier"> <g> <g> <path d="M402.115,84.008L323.088,4.981C319.899,1.792,315.574,0,311.063,0H17.005C7.613,0,0,7.614,0,17.005v373.086 c0,9.392,7.613,17.005,17.005,17.005h373.086c9.392,0,17.005-7.613,17.005-17.005V96.032 C407.096,91.523,405.305,87.197,402.115,84.008z M300.664,163.567H67.129V38.862h233.535V163.567z" /> <path d="M214.051,148.16h43.08c3.131,0,5.668-2.538,5.668-5.669V59.584c0-3.13-2.537-5.668-5.668-5.668h-43.08 c-3.131,0-5.668,2.538-5.668,5.668v82.907C208.383,145.622,210.92,148.16,214.051,148.16z" /> </g> </g> </g>
                                         </svg>
                                         <span>Save Profile</span>

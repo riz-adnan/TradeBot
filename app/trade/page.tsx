@@ -159,18 +159,18 @@ export default function Trade() {
                     </svg>
                 </div>
 
-                <div className="relative z-[20] pt-32 pb-10 md:pt-40 md:pb-16">
+                <div className="relative pt-32 pb-2 md:pt-40 md:pb-4">
                     <div className='flex flex-row gap-8 justify-center'>
                         <NavButton task={() => setType('Real')} text='Real' type={type} />
                         <NavButton task={() => setType('Paper')} text='Paper' type={type} />
                     </div>
                 </div>
 
-                <section className='absolute top-[5rem] left-[-10rem] z-[10] w-[99vw] h-[100vh]'>
+                {/* <section className='absolute top-[5rem] left-[-10rem] z-[10] w-[99vw] h-[100vh]'> */}
                     <BullModel url="/models/bull_head/scene.gltf" />
-                </section>
+                {/* </section> */}
 
-                <div className="relative z-[20] overflow-x-auto overflow-y-hidden my-[8rem]">
+                <div className="relative overflow-x-auto overflow-y-hidden my-[8rem] mt-[0rem]">
                     <div className="flex flex-column sm:flex-row flex-wrap space-y-4 sm:space-y-0 items-center justify-between pb-4">
                         <div>
                             <button

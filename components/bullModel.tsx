@@ -20,8 +20,8 @@ function BullHead({ url }: BullHeadProps) {
         const vec = new Vector3(x, y, 0).unproject(camera);
         vec.sub(camera.position).normalize();
 
-        mouse.current.x = (x * 0.5) * Math.PI;
-        mouse.current.y = (y * 0.5) * Math.PI;
+        mouse.current.x = (x * 0.3) * Math.PI;
+        mouse.current.y = (y * 0.3) * Math.PI;
 
         if (modelRef.current) {
             modelRef.current.rotation.y = mouse.current.x;
@@ -35,8 +35,8 @@ function BullHead({ url }: BullHeadProps) {
 export default function BullHeadCanvas({ url }: BullHeadProps) {
     return (
         <Canvas
-            style={{ height: '100%', width: '100%', position: 'relative', top: '-6rem' }}
-            camera={{ position: [0, 0, 2], rotation: [0, 0, 0], fov: 75 }}
+            style={{ height: '50vh', width: '96vw', position: 'relative', top: '-1rem', left: '-10rem', zIndex: 20 }}
+            camera={{ position: [0, 0, 1], rotation: [0, 0, 0], fov: 75 }}
         >
             <ambientLight intensity={0.5} />
             <directionalLight position={[0, 0, 5]} />
