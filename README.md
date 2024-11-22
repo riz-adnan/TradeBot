@@ -1,8 +1,12 @@
-# Trade Bot
+ #                         [Trade Bot](https://aptradebot.netlify.app/)
 
 ## 📖 Introduction
 
 Welcome to our Trade Bot, a powerful tool designed to perform real-time trades in the market using advanced algorithms powered by Machine Learning. This README will guide you through the setup, features, and usage of our Trade Bot.
+
+## 🚀 Live Link:
+
+[Live link to our web app.](https://aptradebot.netlify.app/)
 
 ## 📝 Table of Contents
 
@@ -57,9 +61,6 @@ Monitor the bot's output for real-time updates, trade executions, and performanc
 
 This document outlines how to interact with the trading bot web service, which is built using Python, FastAPI, and SwaggerUI.
 
-### 🚀 Live Link:
-
-[Live link to our web service.](https://trading-bot-8nld.onrender.com/docs)
 
 ### 📜 Accessing the API Documentation:
 
