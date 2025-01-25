@@ -1,0 +1,54 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;800&family=VT323&display=swap');
+
+:root {
+    --primary: #12bca2;
+    --secondary: #6d15df;
+}
+
+.trade-container {
+    max-width: 1200px;
+    margin: 50px auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+    height: 6em;
+}
+
+.trade-container::before {
+    content: '';
+    background-image: url("../../public/tradeBg.png");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    opacity: 0.8;
+}
+
+.trade-container button {
+    margin: 10px;
+    margin-top: 5em;
+    padding: 1em 2em;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 2em;
+    font-weight: bold;
+    box-shadow: 0 0 1000px 6px #b5b9b8;
+}
+
+.trade-container button:hover {
+    background: var(--secondary);
+}
+
+.trade-container button:focus {
+    outline: none;
+}

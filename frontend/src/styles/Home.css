@@ -1,0 +1,127 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;800&family=VT323&display=swap');
+
+:root {
+    --primary: #12bca2;
+    --secondary: #6d15df;
+}
+
+h1, h2, h3 {
+    margin: 0;
+}
+
+body {
+    margin: 0;
+    color: #333;
+    font-family: 'Poppins';
+    background: #f2f2f2;
+}
+
+.home-container {
+    max-width: 1200px;
+    margin: 50px auto;
+    padding: 20px;
+}
+
+.home-container::before {
+    content: '';
+    background-image: url("../../public/aboutBg.png");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    z-index: -1;
+    opacity: 0.55;
+}
+
+.starting-content {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin: 2rem 1rem 3rem 1rem;
+    padding: 1rem 2rem;
+}
+
+.starting-content img {
+    width: 30rem;
+    object-fit: cover;
+    border-radius: 1rem;
+}
+
+.starting-content p {
+    width: 30rem;
+    padding: 1rem;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: rgb(92, 16, 180);
+    /* box-shadow: 0 0 10px 3px #000; */
+}
+
+.home-container h1 {
+    font-size: 2.5em;
+    color: var(--primary);
+    width: max-content;
+    margin: 0 auto;
+    text-shadow: 0 0 10px #fff;
+}
+
+/* User grid */
+.user-grid {
+    margin-top: 40px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 40px;
+}
+
+.user-display-format {
+    width: 100%;
+    padding: 10px;
+    background: #fff;
+    box-sizing: border-box;
+    border-radius: 6px;
+    position: relative;
+}
+
+.user-display-format:hover {
+    box-shadow: 0 0 10px #a0f0e4;
+}
+
+.user-display-format .rating {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: var(--secondary);
+    color: #fff;
+    border-radius: 6px;
+    width: 40px;
+    height: 0;
+    padding: 20px 0;
+    line-height: 0px;
+    text-align: center;
+}
+
+.user-display-format .buttons {
+    text-align: right;
+}
+
+.user-display-format i {
+    color: #bbb;
+    margin-left: 10px;
+    font-size: 1.2em;
+    padding: 6px;
+    background: #eee;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.user-display-format i:hover {
+    background: #ddd;
+}
+
+.user-display-format a {
+    text-decoration: none;
+    color: var(--primary);
+}

@@ -1,0 +1,33 @@
+:root {
+    --primary: #12bca2;
+    --secondary: #6d15df;
+    --bg-color: #f2f2f2;
+}
+
+.fetchuser-container {
+    max-width: 1200px;
+    margin: 50px auto;
+    padding: 20px;
+}
+
+.fetchuser-container h1 {
+    font-size: 2.5em;
+    color: var(--primary);
+    width: max-content;
+    margin: 0 auto;
+}
+
+/* Fetch Box */
+.fetchuser-container .user-display-format {
+    width: 80%;
+    padding: 10px;
+    background: #fff;
+    box-sizing: border-box;
+    border-radius: 6px;
+    position: relative;
+    margin: 20px auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+}
