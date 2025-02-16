@@ -31,6 +31,9 @@ Our Trade Bot leverages cutting-edge algorithms to analyze market trends, identi
 - **Real-Time Trading:** Execute trades in real-time to capitalize on market fluctuations.
 - **Risk Management:** Implement robust risk management techniques to protect your investments.
 
+## Video 
+- ![Video](frontend/public/videos/Trade_Bot_pitch.mp4)
+
 ## 📲 Installation
 
 Follow these steps to set up the Trade Bot on your system:
