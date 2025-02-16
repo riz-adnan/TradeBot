@@ -6,7 +6,7 @@ Welcome to our Trade Bot, a powerful tool designed to perform real-time trades i
 
 ## 🚀 Live Link:
 
-[Live link to our web app.](https://aptradebot.netlify.app/)
+[Live link to our web app.](https://free-trade-bot.netlify.app/)
 
 ## 📝 Table of Contents
 
