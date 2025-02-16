@@ -111,38 +111,36 @@ const trasactionArray = [
     { transactionId: '5gdffg5b', date: new Date(), category: 'Withdraw', amount: 50 },
 ]
 
+// Define interface
+interface Transaction {
+    transactionId: string;
+    name: string;
+    date: Date;
+    category: string;
+    quantity: number;
+}
+
 export default function Wallet() {
     const { account } = useAccount();
     const router = useRouter();
 
     // Define states
     const [wallet, setWallet] = useState({
-        real: {
-            total: 32,
-            profit: 32,
-            deposited: 32,
-            withdrawn: 32,
-        },
-        paper: {
-            total: 500,
-            profit: 500,
-            deposited: 500,
-            withdrawn: 500,
-        }
+        cash: 0,
+        equity: 0,
+        short_value: 0,
+        long_value: 0,
     })
-    const [type, setType] = useState('Real');
-    interface Transaction {
-        transactionId: string;
-        date: Date;
-        category: string;
-        amount: number;
-    }
+    // const [type, setType] = useState('Real');
 
     const [transactions, setTransactions] = useState<Transaction[]>([])
     const [totalPages, setTotalPages] = useState(Math.ceil(transactions.length / 10));
     const [currentPage, setCurrentPage] = useState(1);
     const [pageOffset, setPageOffset] = useState(0);
-    const [dropdown, setDropdown] = useState({ show: false, type: '' });
+    const [dropdown, setDropdown] = useState({
+        show: false,
+        // type: ''
+    });
 
     // Define functions
     const handlePreviousSet = () => {
@@ -170,50 +168,69 @@ export default function Wallet() {
     useEffect(() => setTotalPages(Math.ceil(transactions.length / 10)), [transactions]);
 
     useEffect(() => {
-        // Fetch transactions
         const fetchTransactions = async () => {
+            const accountFromStorage = localStorage.getItem('account') ? JSON.parse(localStorage.getItem('account') as string) : null;
             try {
-                if (!account.username) {
-                    throw new Error('No account username found');
-                }
-                const response = await fetch(`https://trading-bot-lmca.onrender.com/user/${account.username}`, {
-                    method: 'GET',
+                const response = await fetch("api/orders", {
+                    method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`,
                     },
+                    body: JSON.stringify({
+                        api_key: accountFromStorage.api_key_public,
+                        private_key: accountFromStorage.api_key_private
+                    }),
                 });
-                const data = await response.json();
-
-                if (response.status === 200) {
-                    console.log("The wallet data recieved is: ", data.data);
-                    console.log("The type of data recieved are: ", typeof data.data);
-                    if (data?.transactions) {
-                        setTransactions(data.transactions);
-                    }
-                    setWallet({
-                        real: {
-                            ...wallet.real,
-                            total: data.data.current_balance,
-                            profit: data.data.profit,
-                        },
-                        paper: {
-                            ...wallet.paper,
-                            total: data.data.current_balance,
-                            profit: data.data.profit,
-                        }
-                    });
-                } else {
-                    throw new Error('Failed to fetch transactions');
+                if (response?.status !== 200) {
+                    throw new Error(`Error: ${response.status} ${response.statusText}`);
                 }
+                const data = await response.json();
+                const formattedTransactions = data.map((transaction: any) => ({
+                    transactionId: transaction.id,
+                    name: transaction.symbol,
+                    date: new Date(transaction.submitted_at),
+                    category: transaction.order_type,
+                    quantity: transaction.qty,
+                }));
+                setTransactions(formattedTransactions);
             } catch (error) {
                 console.error(error);
-                router.push('/signin');
+                // router.push('/signin');
+            }
+        }
+
+        const fetchWallet = async () => {
+            const accountFromStorage = localStorage.getItem('account') ? JSON.parse(localStorage.getItem('account') as string) : null;
+            try {
+                const response = await fetch("api/account", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        api_key: accountFromStorage.api_key_public,
+                        private_key: accountFromStorage.api_key_private
+                    }),
+                });
+                if (response?.status !== 200) {
+                    throw new Error(`Error: ${response.status} ${response.statusText}`);
+                }
+                const data = await response.json();
+                setWallet({
+                    cash: data.cash,
+                    equity: data.equity,
+                    short_value: data.short_market_value,
+                    long_value: data.long_market_value,
+                });
+            } catch (error) {
+                console.error(error);
+                // router.push('/signin');
             }
         }
 
         fetchTransactions();
-    }, [type]);
+        fetchWallet();
+    }, []);
 
     return (
         <main>
@@ -232,46 +249,50 @@ export default function Wallet() {
                     </svg>
                 </div>
 
-                <div className="relative pt-32 pb-10 md:pt-40 md:pb-16">
+                {/* <div className="relative pt-32 pb-10 md:pt-40 md:pb-16">
                     <div className='flex flex-row gap-8 justify-center'>
                         <NavButton task={() => setType('Real')} text='Real' type={type} />
                         <NavButton task={() => setType('Paper')} text='Paper' type={type} />
                     </div>
-                </div>
+                </div> */}
 
-                <div className="bg-gray-900">
-                    <div className="mx-auto max-w-7xl px-6 lg:px-8">
-                        <div className="mx-auto max-w-2xl lg:max-w-none">
-                            <div className="text-center space-y-4">
-                                <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Wallet Statistics and Quick Info</h2>
+                {account ? (
+                    <div className="bg-gray-900 md:pt-40">
+                        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+                            <div className="mx-auto max-w-2xl lg:max-w-none">
+                                <div className="text-center space-y-4">
+                                    <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Wallet Statistics and Quick Info</h2>
+                                </div>
+                                <dl className="mt-16 grid grid-cols-1 gap-0.5 overflow-hidden rounded-2xl text-center sm:grid-cols-2 lg:grid-cols-4">
+                                    <div className="flex flex-col bg-white/5 p-8">
+                                        <dt className="text-sm font-semibold leading-6 text-gray-300">Cash</dt>
+                                        <dd className="order-first text-3xl font-semibold tracking-tight text-white">$ {wallet.cash}</dd>
+                                    </div>
+                                    <div className="flex flex-col bg-white/5 p-8">
+                                        <dt className="text-sm font-semibold leading-6 text-gray-300">Equity</dt>
+                                        <dd className="order-first text-3xl font-semibold tracking-tight text-white">$ {wallet.equity}</dd>
+                                    </div>
+                                    <div className="flex flex-col bg-white/5 p-8">
+                                        <dt className="text-sm font-semibold leading-6 text-gray-300">Short Market Value</dt>
+                                        <dd className="order-first text-3xl font-semibold tracking-tight text-white">$ {wallet.short_value}</dd>
+                                    </div>
+                                    <div className="flex flex-col bg-white/5 p-8">
+                                        <dt className="text-sm font-semibold leading-6 text-gray-300">Long Market Value</dt>
+                                        <dd className="order-first text-3xl font-semibold tracking-tight text-white">$ {wallet.long_value}</dd>
+                                    </div>
+                                </dl>
                             </div>
-                            <dl className="mt-16 grid grid-cols-1 gap-0.5 overflow-hidden rounded-2xl text-center sm:grid-cols-2 lg:grid-cols-4">
-                                <div className="flex flex-col bg-white/5 p-8">
-                                    <dt className="text-sm font-semibold leading-6 text-gray-300">Total balance</dt>
-                                    <dd className="order-first text-3xl font-semibold tracking-tight text-white">$ {type === 'Real' ? wallet.real.total : wallet.paper.total}</dd>
-                                </div>
-                                <div className="flex flex-col bg-white/5 p-8">
-                                    <dt className="text-sm font-semibold leading-6 text-gray-300">Profit</dt>
-                                    <dd className="order-first text-3xl font-semibold tracking-tight text-white">$ {type === 'Real' ? wallet.real.profit : wallet.paper.profit}</dd>
-                                </div>
-                                <div className="flex flex-col bg-white/5 p-8">
-                                    <dt className="text-sm font-semibold leading-6 text-gray-300">Deposited</dt>
-                                    <dd className="order-first text-3xl font-semibold tracking-tight text-white">$ {type === 'Real' ? wallet.real.deposited : wallet.paper.deposited}</dd>
-                                </div>
-                                <div className="flex flex-col bg-white/5 p-8">
-                                    <dt className="text-sm font-semibold leading-6 text-gray-300">Withdrawn</dt>
-                                    <dd className="order-first text-3xl font-semibold tracking-tight text-white">$ {type === 'Real' ? wallet.real.withdrawn : wallet.paper.withdrawn}</dd>
-                                </div>
-                            </dl>
                         </div>
                     </div>
-                </div>
+                ) : (
+                    <div className="text-center text-gray-400">Please sign in to view your wallet details.</div>
+                )}
 
                 <div className="relative overflow-x-auto overflow-y-hidden left-[-11rem] w-[97vw] h-[fit-content] shadow-md sm:rounded-lg my-12 flex flex-row">
                     <section className='w-[45vw]'>
                         <ModelViewer url='/models/robot_playground/scene.gltf' />
                     </section>
-                    <div className='relative z-[20] flex-grow-[1] bg-transparent'>
+                    {account ? <div className='relative z-[20] flex-grow-[1] bg-transparent'>
                         <div className="flex flex-column sm:flex-row flex-wrap space-y-4 sm:space-y-0 items-center justify-between pb-4">
                             <div>
                                 <button
@@ -290,7 +311,7 @@ export default function Wallet() {
                                     >
                                         <path d="M10 0a10 10 0 1 0 10 10A10.011 10.011 0 0 0 10 0Zm3.982 13.982a1 1 0 0 1-1.414 0l-3.274-3.274A1.012 1.012 0 0 1 9 10V6a1 1 0 0 1 2 0v3.586l2.982 2.982a1 1 0 0 1 0 1.414Z" />
                                     </svg>
-                                    {dropdown.type}
+                                    {/* {dropdown.type} */}
                                     <svg
                                         className="w-2.5 h-2.5 ms-2.5"
                                         aria-hidden="true"
@@ -319,7 +340,7 @@ export default function Wallet() {
                                                     <div
                                                         className="flex items-center p-2 rounded hover:bg-gray-600"
                                                         onClick={() => {
-                                                            setDropdown({ ...dropdown, type, show: false });
+                                                            setDropdown({ ...dropdown, show: false });
                                                         }}
                                                     >
                                                         <input
@@ -328,8 +349,8 @@ export default function Wallet() {
                                                             value={type}
                                                             name="filter-radio"
                                                             className="w-4 h-4 text-blue-600 focus:ring-blue-600 ring-offset-gray-800 focus:ring-offset-gray-800 focus:ring-2 bg-gray-700 border-gray-600"
-                                                            checked={dropdown.type === type}
-                                                            onChange={() => setDropdown({ ...dropdown, type })}
+                                                            // checked={dropdown.type === type}
+                                                            onChange={() => setDropdown({ ...dropdown })}
                                                         />
                                                         <label
                                                             htmlFor={`filter-radio-example-${index + 1}`}
@@ -357,7 +378,7 @@ export default function Wallet() {
                             <thead className="text-xs uppercase bg-gray-700 text-gray-400">
                                 <tr>
                                     <th scope="col" className="px-6 py-3">
-                                        Transaction ID
+                                        Transaction
                                     </th>
                                     <th scope="col" className="px-6 py-3">
                                         Date
@@ -366,7 +387,7 @@ export default function Wallet() {
                                         Category
                                     </th>
                                     <th scope="col" className="px-6 py-3">
-                                        Amount
+                                        Quantity
                                     </th>
                                 </tr>
                             </thead>
@@ -374,7 +395,7 @@ export default function Wallet() {
                                 {Array.isArray(transactions) && transactions.length > 0 && transactions.slice((currentPage - 1) * 10, currentPage * 10).map((transaction) => (
                                     <tr key={transaction?.transactionId} className="border-b bg-gray-800 border-gray-700 hover:bg-gray-600">
                                         <th scope="row" className="px-6 py-4 font-medium whitespace-nowrap">
-                                            <button onClick={() => handleDownloadReceipt(transaction?.transactionId)} className="font-medium text-blue-500 hover:underline">{transaction.transactionId}</button>
+                                            <button onClick={() => handleDownloadReceipt(transaction?.transactionId)} className="font-medium text-blue-500 hover:underline">{transaction?.name}</button>
                                         </th>
                                         <td className="px-6 py-4">
                                             {transaction.date.toDateString()}
@@ -383,7 +404,7 @@ export default function Wallet() {
                                             {transaction.category}
                                         </td>
                                         <td className="px-6 py-4">
-                                            {transaction.amount}
+                                            {transaction.quantity}
                                         </td>
                                     </tr>
                                 ))}
@@ -406,7 +427,7 @@ export default function Wallet() {
                                 </li>
                             </ul>
                         </nav>
-                    </div>
+                    </div> : <div className="text-center text-gray-400">Please sign in to view your orders.</div>}
                 </div>
             </div>
         </main>

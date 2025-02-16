@@ -69,14 +69,7 @@ export default function Header() {
                 </Link>
               </li>
               {accountId && accountId !== '' ? (<>
-                <li>
-                  <Link
-                    href={`/profile/${accountId}`}
-                    className={`font-medium hover:text-gray-200 px-4 py-3 flex items-center transition duration-150 ease-in-out ${findActiveLink(`/profile/${accountId}`)}`}
-                  >
-                    Profile
-                  </Link>
-                </li>
+                
                 <li>
                   <button
                     onClick={logout}
@@ -87,16 +80,12 @@ export default function Header() {
               <><li>
                 <Link
                   href="/signin"
-                  className="font-medium hover:text-gray-200 px-4 py-3 flex items-center transition duration-150 ease-in-out"
+                  className="font-medium hover:text-gray-200 px-4 py-3 flex items-center transition duration-150 ease-in-out text-yellow-400"
                 >
                   Sign in
                 </Link>
               </li>
-                <li>
-                  <Link href="/signup" className="btn-sm text-white bg-purple-600 hover:bg-purple-700 ml-3">
-                    Sign up
-                  </Link>
-                </li>
+                
               </>)}
             </ul>
           </nav>

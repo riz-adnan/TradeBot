@@ -4,54 +4,50 @@ import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 
-import TestimonialImage01 from '@/public/images/testimonial-01.jpg'
-import TestimonialImage02 from '@/public/images/testimonial-02.jpg'
-import TestimonialImage03 from '@/public/images/testimonial-03.jpg'
+import TestimonialImage01 from '@/public/images/test1.png'
+import TestimonialImage02 from '@/public/images/test2.png'
+import TestimonialImage03 from '@/public/images/test3.png'
+import TestimonialImage04 from '@/public/images/test4.png'
+import TestimonialImage05 from '@/public/images/test5.png'
 
 export default function Testimonials() {
   const [testimonials, setTestimonials] = useState([
     {
       id: 1,
-      name: 'Anastasia Dan',
-      company: 'UX Board',
+      name: 'Prakash ',
+      company: '13% ROI in 3 months',
       image: TestimonialImage01,
       text: 'This trade bot has revolutionized my investing game! Its LSTM and ML techniques deliver accurate predictions and solid profits. It’s an essential tool for any serious trader.',
     },
     {
       id: 2,
-      name: 'Anastasia Dan',
-      company: 'UX Board',
+      name: 'Vaibhav',
+      company: '8% ROI in 2 months',
       image: TestimonialImage02,
-      text: 'This trade bot has revolutionized my investing game! Its LSTM and ML techniques deliver accurate predictions and solid profits. It’s an essential tool for any serious trader.',
+      text: '15% ROI in 2 months',
     },
     {
       id: 3,
-      name: 'Anastasia Dan',
-      company: 'UX Board',
+      name: 'Ansh',
+      company: '22% ROI in 3 months',
       image: TestimonialImage03,
       text: 'This trade bot has revolutionized my investing game! Its LSTM and ML techniques deliver accurate predictions and solid profits. It’s an essential tool for any serious trader.',
     },
     {
       id: 4,
-      name: 'Anastasia Dan',
-      company: 'UX Board',
-      image: TestimonialImage01,
+      name: 'Arpit',
+      company: '18% ROI in 3 months',
+      image: TestimonialImage04,
       text: 'This trade bot has revolutionized my investing game! Its LSTM and ML techniques deliver accurate predictions and solid profits. It’s an essential tool for any serious trader.',
     },
     {
       id: 5,
-      name: 'Anastasia Dan',
-      company: 'UX Board',
-      image: TestimonialImage02,
+      name: 'Mihir',
+      company: '11% ROI in 3 months',
+      image: TestimonialImage05,
       text: 'This trade bot has revolutionized my investing game! Its LSTM and ML techniques deliver accurate predictions and solid profits. It’s an essential tool for any serious trader.',
     },
-    {
-      id: 6,
-      name: 'Anastasia Dan',
-      company: 'UX Board',
-      image: TestimonialImage03,
-      text: 'This trade bot has revolutionized my investing game! Its LSTM and ML techniques deliver accurate predictions and solid profits. It’s an essential tool for any serious trader.',
-    },
+
   ])
 
   useEffect(() => {
@@ -65,8 +61,8 @@ export default function Testimonials() {
 
           {/* Section header */}
           <div className="max-w-3xl mx-auto text-center pb-12 md:pb-20">
-            <h2 className="h2 mb-4">Not only we say!</h2>
-            <p className="text-xl text-gray-400">See what are the views of the others on our product and service</p>
+            <h2 className="h2 mb-4">Upto 22% ROI in 3 months!!!</h2>
+            <p className="text-xl text-gray-400">See some of top portfolios of our users who have automated their trading process with our Trade Bot!.</p>
           </div>
 
           {/* Testimonials */}
@@ -79,14 +75,15 @@ export default function Testimonials() {
                   data-aos="fade-up"
                 >
                   <div>
-                    <div className="relative inline-flex flex-col mb-4">
-                      <Image
-                        className="rounded-full"
-                        src={testimony.image}
-                        width={48}
-                        height={48}
-                        alt="Testimonial"
-                      />
+                  <div className="relative inline-flex flex-col mb-4">
+  <Image
+    className="w-64 h-48 object-cover"  // Increased width (256px) while keeping height 192px
+    src={testimony.image}
+    width={256}  // Match Tailwind w-64 = 256px
+    height={192} // Match Tailwind h-48 = 192px
+    alt="Testimonial"
+  />
+
                       <svg
                         className="absolute top-0 right-0 -mr-3 w-6 h-5 fill-current text-purple-600"
                         viewBox="0 0 24 20"
@@ -96,8 +93,7 @@ export default function Testimonials() {
                       </svg>
                     </div>
                   </div>
-                  <blockquote className="text-lg text-gray-400 grow">— {testimony.text}</blockquote>
-                  <div className="text-gray-700 font-medium mt-6 pt-5 border-t border-gray-700">
+                   <div className="text-gray-700 font-medium mt-6 pt-5 border-t border-gray-700">
                     <cite className="text-gray-200 not-italic">{testimony.name}</cite> -{' '}
                     <Link
                       className="text-purple-600 hover:text-gray-200 transition duration-150 ease-in-out"
