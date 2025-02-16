@@ -1,0 +1,11 @@
+Model Information:
+* title:	Bull head
+* source:	https://sketchfab.com/3d-models/bull-head-99d5c8913d40495fa793f6d36baf3d04
+* author:	Wilka (https://sketchfab.com/inf111)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Bull head" (https://sketchfab.com/3d-models/bull-head-99d5c8913d40495fa793f6d36baf3d04) by Wilka (https://sketchfab.com/inf111) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
