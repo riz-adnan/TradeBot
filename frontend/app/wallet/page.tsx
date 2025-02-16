@@ -202,7 +202,7 @@ export default function Wallet() {
         const fetchWallet = async () => {
             const accountFromStorage = localStorage.getItem('account') ? JSON.parse(localStorage.getItem('account') as string) : null;
             try {
-                const response = await fetch("api/account", {
+                const response = await fetch("api/wallet", {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -378,7 +378,7 @@ export default function Wallet() {
                             <thead className="text-xs uppercase bg-gray-700 text-gray-400">
                                 <tr>
                                     <th scope="col" className="px-6 py-3">
-                                        Transaction
+                                        Order
                                     </th>
                                     <th scope="col" className="px-6 py-3">
                                         Date

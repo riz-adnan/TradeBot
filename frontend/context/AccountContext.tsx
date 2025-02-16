@@ -68,6 +68,7 @@ export const AccountProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const login = async (email: string, password: string) => {
     try {
+      console.log("The login request is: ", email, password);
       const response = await fetch('https://trading-bot-lmca.onrender.com/login', {
         method: 'POST',
         headers: {
@@ -94,6 +95,16 @@ export const AccountProvider: React.FC<{ children: ReactNode }> = ({ children })
           api_key_public: data.api_key_public,
           base_url: data.base_url
         })
+        localStorage.setItem('account', JSON.stringify({
+          username: data.username,
+          email: email,
+          profilePicture: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTNYLv3ILZTm1R35NsHkSwt4JSgral8pgRwDg&s',
+          currentBalance: data.current_balance,
+          profit: data.profit,
+          api_key_private: data.api_key_private,
+          api_key_public: data.api_key_public,
+          base_url: data.base_url
+        }));
         router.push('/');
       } else {
         console.error('Login failed');
