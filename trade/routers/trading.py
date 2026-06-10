@@ -1,237 +1,547 @@
-from typing import List
-from fastapi import APIRouter, Depends, status
-from .. import schemas, oauth2
-import datetime
-import pytz
-import schedule
-import time
-from datetime import date, timedelta
-from sqlalchemy.orm import Session
-from .. import schemas
-# from ..database import SessionLocal, engine
-from .. import mongodb
-import market_connection as mc1
-import market_connection2 as mc2
-import yfinance as yf
+from pathlib import Path
+import pickle
+from typing import Dict, List, Literal
+
+from alpaca.trading.client import TradingClient
+from alpaca.trading.enums import OrderClass, OrderSide, TimeInForce
+from alpaca.trading.requests import (
+    MarketOrderRequest,
+    StopLossRequest,
+    TakeProfitRequest,
+)
+from fastapi import APIRouter, HTTPException, status
 import numpy as np
 import pandas as pd
 import pandas_ta as ta
-import yfinance as yf
-from alpaca.trading.client import TradingClient
-from alpaca.trading.requests import MarketOrderRequest
-from alpaca.trading.enums import OrderSide, TimeInForce
 from sklearn.preprocessing import MinMaxScaler
-import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense, Dropout
-import gradio as gr
-
-router = APIRouter(
-    prefix = '/trading',
-    tags = ['trading']
+from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
+from tensorflow.keras.layers import (
+    Attention,
+    Concatenate,
+    Dense,
+    Dropout,
+    Embedding,
+    Flatten,
+    GlobalAveragePooling1D,
+    Input,
+    LSTM,
 )
+from tensorflow.keras.models import Model, load_model
+from tensorflow.keras.optimizers import Adam
+import yfinance as yf
 
-users = mongodb.users
-user_helper = mongodb.user_helper
-
-
-# -------------------------- Trade --------------------------
-# Define the start and end times in ET
-@router.post('/', status_code = status.HTTP_201_CREATED)
-def trading():
-     start_time = datetime.time(9, 30)
-     end_time = datetime.time(15, 30)
-     new_york_timezone = pytz.timezone('America/New_York')
-     # session = SessionLocal()
-
-     dataNames =["AAPL","MSFT","AMZN","GOOG","META","TSLA","NVDA","PYPL","INTC","NFLX","ADBE","CSCO","CMCSA","PEP","AVGO","TXN","QCOM","ADP","COST","TMUS"]
-
-     
-
-     
-
-     def create_client(API_KEY, API_SECRET, BASE_URL):
-          alpaca_client = TradingClient(API_KEY, API_SECRET, paper=True)
-          return alpaca_client
-
-     def append_indicators(stock_data):
-          stock_data["VWAP"] = ta.vwap(stock_data.High, stock_data.Low, stock_data.Close, stock_data.Volume)
-          stock_data['RSI'] = ta.rsi(stock_data.Close, length=20)
-          my_bbands = ta.bbands(stock_data.Close, length=20, std=2.0)
-          stock_data = stock_data.join(my_bbands)
-          return stock_data
-
-     def prepare_data(stock_data, sequence_length):
-          stock_data = stock_data.dropna()
-          data = stock_data[['Close', 'RSI', 'VWAP', 'BBU_20_2.0', 'BBM_20_2.0', 'BBL_20_2.0']]
-          scaler = MinMaxScaler()
-          scaled_data = scaler.fit_transform(data)
-
-          X = []
-          y = []
-          for i in range(sequence_length, len(scaled_data)):
-               X.append(scaled_data[i-sequence_length:i])
-               y.append(scaled_data[i, 0])  # Predict the Close price
-
-          X, y = np.array(X), np.array(y)
-          return X, y, scaler
-
-     def build_lstm_model(input_shape):
-          model = Sequential()
-          model.add(LSTM(units=50, return_sequences=True, input_shape=input_shape))
-          model.add(Dropout(0.2))
-          model.add(LSTM(units=50, return_sequences=False))
-          model.add(Dropout(0.2))
-          model.add(Dense(units=25))
-          model.add(Dense(units=1))
-
-          model.compile(optimizer='adam', loss='mean_squared_error')
-          return model
-
-     def train_model(model, X_train, y_train, epochs=50, batch_size=32):
-          model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, verbose=1)
-          return model
-
-     def generate_predictions(model, data, scaler, sequence_length):
-          scaled_data = scaler.transform(data)
-          X_test = []
-          for i in range(sequence_length, len(scaled_data)):
-               X_test.append(scaled_data[i-sequence_length:i])
-
-          X_test = np.array(X_test)
-          predictions = model.predict(X_test)
-          predictions = scaler.inverse_transform(np.concatenate((predictions, np.zeros((predictions.shape[0], data.shape[1]-1))), axis=1))[:, 0]
-          return predictions
-
-     def placing_order(predictions, api, symbol, current_price, rsi):
-          orders = []
-          slatr = 1.2 * (max(predictions) - min(predictions))  
-          TPSLRatio = 1.5
-
-          for i in range(len(predictions)):
-               if predictions[i] > current_price and rsi <= 10:
-                    sl1 = current_price - slatr
-                    tp1 = current_price + slatr * TPSLRatio
-                    order = MarketOrderRequest(
-                         symbol=symbol,
-                         qty=1,
-                         take_profit={'limit_price': tp1},
-                         stop_loss={'stop_price': sl1},
-                         side=OrderSide.BUY,
-                         time_in_force=TimeInForce.DAY)
-                    api.submit_order(order)
-                    orders.append(order)
-               elif predictions[i] < current_price and rsi >= 90:
-                    sl1 = current_price + slatr
-                    tp1 = current_price - slatr * TPSLRatio
-                    order = MarketOrderRequest(
-                         symbol=symbol,
-                         qty=1,
-                         take_profit={'limit_price': tp1},
-                         stop_loss={'stop_price': sl1},
-                         side=OrderSide.SELL,
-                         time_in_force=TimeInForce.DAY)
-                    api.submit_order(order)
-                    orders.append(order)
-          return orders
-
-     # Gradio Interface
-     def predict_and_trade(stock_ticker, api_key, api_secret, base_url):
-          tickers = [ticker.strip() for ticker in stock_ticker.split(',')]
-          results = []
-
-          for ticker in tickers:
-               # Fetch data
-               stock_data = yf.download(ticker, period="1y", interval="1d")
-               stock_data.columns = stock_data.columns.droplevel(1)
-               stock_data = append_indicators(stock_data)
-
-               # Prepare data
-               sequence_length = 60
-               X, y, scaler = prepare_data(stock_data, sequence_length)
-
-               # Build and train the model
-               input_shape = (X.shape[1], X.shape[2])
-               model = build_lstm_model(input_shape)
-               model = train_model(model, X, y)
-
-               # Make predictions
-               predictions = generate_predictions(model, stock_data[['Close', 'RSI', 'VWAP', 'BBU_20_2.0', 'BBM_20_2.0', 'BBL_20_2.0']], scaler, sequence_length)
-               predict_value = 0
-               for i in range(len(predictions)):
-                    if not np.isnan(predictions[i]):
-                         predict_value = predictions[i]
-                         break
+from .. import schemas
 
 
+router = APIRouter(prefix="/trading", tags=["trading"])
 
-               # Create the Alpaca client
-               client = create_client(api_key, api_secret, base_url)
+Mode = Literal["daily", "intraday"]
 
-               # Place orders based on predictions
-               current_price = stock_data['Close'].iloc[-1]
-               rsi = stock_data['RSI'].iloc[-1]
-               print("error in placing order")
-               orders = placing_order(predictions, client, ticker, current_price, rsi)
-               print("error in appending result")
-               results.append([
-                    ticker,
+BASE_MODEL_DIR = Path("models")
+FEATURE_COLUMNS = [
+    "Close",
+    "Volume",
+    "RSI",
+    "VWAP",
+    "BBU",
+    "BBM",
+    "BBL",
+    "MACD_12_26_9",
+    "MACDh_12_26_9",
+    "MACDs_12_26_9",
+    "ATR",
+    "EMA_20",
+    "EMA_50",
+    "returns",
+    "volatility",
+]
 
-                    [order.json() for order in orders],
 
-                    "predictions : ",
-                    predict_value,
+def normalize_ticker(ticker: str) -> str:
+    ticker = ticker.strip().upper()
+    if not ticker:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Ticker cannot be empty.",
+        )
+    return ticker
 
-               ])
-          print("error in returning")
-          return results
 
-     def strategy1(API_KEY, API_SECRET, BASE_URL):
-         
-          for i in dataNames:
-               predict_and_trade(i, API_KEY, API_SECRET, BASE_URL)
-               print(orders)
+def shared_model_paths(mode: Mode) -> Dict[str, Path]:
+    model_dir = BASE_MODEL_DIR / mode
+    return {
+        "model": model_dir / f"shared_{mode}.keras",
+        "scaler": model_dir / f"shared_{mode}_scaler.pkl",
+        "ticker_map": model_dir / "ticker_map.pkl",
+    }
 
-     def strategy2(API_KEY, API_SECRET, BASE_URL):
-          alpaca_client = mc1.create_client(API_KEY,API_SECRET,BASE_URL)
-          flag = True
-          for i in dataNames:
-               stock_data=yf.download(i, start=date.today()-timedelta(days = 50), end=date.tooday())
-               df1 = mc1.generate(stock_data)
-               orders,flag = mc1.placing_order(df1,alpaca_client,i, flag)
-               if flag == False:
-                    break
-          print(orders)
 
-     def strategy1_for_all():
-          users_list = []
-          for user in users.find():
-               users_list.append(user_helper(user))
-          for i in users_list:
-               strategy1(i['api_key_public'], i['api_key_private'], i['base_url'])
+def flatten_yfinance_columns(df: pd.DataFrame) -> pd.DataFrame:
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = df.columns.get_level_values(0)
+    return df
 
-     def strategy2_for_all():
-          users_list = []
-          for user in users.find():
-               users_list.append(user_helper(user))
-          for i in users_list:
-               strategy2(i['api_key_public'], i['api_key_private'], i['base_url'])
 
-     # Schedule the job to run every 5 minutes during market hours (Monday to Friday)
-     schedule.every(5).seconds.do(strategy1_for_all)
-     schedule.every(1).day.do(strategy2_for_all)
+def download_market_data(ticker: str, mode: Mode, for_training: bool) -> pd.DataFrame:
+    if mode == "daily":
+        period = "5y" if for_training else "1y"
+        interval = "1d"
+    else:
+        period = "60d" if for_training else "10d"
+        interval = "5m"
 
-     # Start the scheduler
-     while True:
-          try:
-               # Check if the current day is a weekday (Monday to Friday)
-               today = datetime.datetime.now().strftime("%A")
-               if today in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]:
-                    # Check if the current time is within market hours
-                    now = datetime.datetime.now()
-                    new_york_time = now.astimezone(new_york_timezone).time()
-                    if start_time <= new_york_time <= end_time:
-                         print("Successfull able to do!")
-                         schedule.run_pending()
-          except Exception as e:
-               print(f"An error occurred: {str(e)}")
+    df = yf.download(
+        ticker,
+        period=period,
+        interval=interval,
+        auto_adjust=False,
+        progress=False,
+    )
+    df = flatten_yfinance_columns(df)
+    if df.empty:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No market data found for {ticker}.",
+        )
+    return df
+
+
+def add_features(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    required_columns = {"High", "Low", "Close", "Volume"}
+    missing_columns = required_columns - set(df.columns)
+    if missing_columns:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Missing required market columns: {sorted(missing_columns)}",
+        )
+
+    df["RSI"] = ta.rsi(df["Close"], length=14)
+    df["VWAP"] = ta.vwap(df["High"], df["Low"], df["Close"], df["Volume"])
+
+    bollinger_bands = ta.bbands(df["Close"], length=20, std=2.0)
+    if bollinger_bands is not None:
+        bb_cols = list(bollinger_bands.columns)
+
+        lower_col = [c for c in bb_cols if c.startswith("BBL_")][0]
+        middle_col = [c for c in bb_cols if c.startswith("BBM_")][0]
+        upper_col = [c for c in bb_cols if c.startswith("BBU_")][0]
+
+        df["BBL"] = bollinger_bands[lower_col]
+        df["BBM"] = bollinger_bands[middle_col]
+        df["BBU"] = bollinger_bands[upper_col]
+
+    macd = ta.macd(df["Close"], fast=12, slow=26, signal=9)
+    if macd is not None:
+        df = df.join(macd)
+
+    df["ATR"] = ta.atr(df["High"], df["Low"], df["Close"], length=14)
+    df["EMA_20"] = ta.ema(df["Close"], length=20)
+    df["EMA_50"] = ta.ema(df["Close"], length=50)
+    df["returns"] = df["Close"].pct_change()
+    df["volatility"] = df["returns"].rolling(window=20).std()
+
+    return df.dropna()
+
+
+def create_target(df: pd.DataFrame, horizon: int, threshold: float) -> pd.DataFrame:
+    df = df.copy()
+    future_return = df["Close"].shift(-horizon) / df["Close"] - 1
+    df["target"] = (future_return > threshold).astype(int)
+    return df.iloc[:-horizon].dropna()
+
+
+def make_sequences(
+    df: pd.DataFrame,
+    sequence_length: int,
+    scaler: MinMaxScaler,
+    ticker_id: int | None = None,
+):
+    missing_features = [column for column in FEATURE_COLUMNS if column not in df.columns]
+    if missing_features:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Missing feature columns: {missing_features}",
+        )
+
+    scaled_features = scaler.transform(df[FEATURE_COLUMNS])
+    targets = df["target"].to_numpy()
+
+    X: List[np.ndarray] = []
+    y: List[int] = []
+    ticker_ids: List[int] = []
+    for index in range(sequence_length, len(scaled_features)):
+        X.append(scaled_features[index - sequence_length:index])
+        y.append(int(targets[index]))
+        if ticker_id is not None:
+            ticker_ids.append(ticker_id)
+
+    if not X:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Not enough market data to create model sequences.",
+        )
+
+    if ticker_id is None:
+        return np.asarray(X), np.asarray(y)
+    return np.asarray(X), np.asarray(y), np.asarray(ticker_ids)
+
+
+def build_advanced_lstm(input_shape, ticker_count: int) -> Model:
+    feature_input = Input(shape=input_shape, name="features")
+    ticker_input = Input(shape=(1,), name="ticker_id")
+
+    x = LSTM(128, return_sequences=True)(feature_input)
+    x = Dropout(0.3)(x)
+    x = LSTM(64, return_sequences=True)(x)
+    x = Dropout(0.3)(x)
+    x = Attention()([x, x])
+    x = GlobalAveragePooling1D()(x)
+
+    embedding_dim = min(16, max(2, ticker_count))
+    ticker_embedding = Embedding(
+        input_dim=ticker_count,
+        output_dim=embedding_dim,
+        name="ticker_embedding",
+    )(ticker_input)
+    ticker_embedding = Flatten()(ticker_embedding)
+
+    x = Concatenate()([x, ticker_embedding])
+    x = Dense(64, activation="relu")(x)
+    x = Dropout(0.3)(x)
+    x = Dense(32, activation="relu")(x)
+    outputs = Dense(1, activation="sigmoid")(x)
+
+    model = Model(inputs=[feature_input, ticker_input], outputs=outputs)
+    model.compile(
+        optimizer=Adam(learning_rate=0.0005),
+        loss="binary_crossentropy",
+        metrics=["accuracy"],
+    )
+    return model
+
+
+def mode_settings(mode: Mode) -> Dict[str, float | int]:
+    if mode == "daily":
+        return {"sequence_length": 60, "horizon": 1, "threshold": 0.002}
+    return {"sequence_length": 48, "horizon": 3, "threshold": 0.0005}
+
+
+def prepare_training_frame(ticker: str, mode: Mode) -> pd.DataFrame:
+    settings = mode_settings(mode)
+    df = download_market_data(ticker, mode, for_training=True)
+    df = add_features(df)
+    return create_target(
+        df,
+        horizon=int(settings["horizon"]),
+        threshold=float(settings["threshold"]),
+    )
+
+
+def train_model_for_tickers(tickers: List[str], mode: Mode) -> Dict[str, str | int | Dict]:
+    normalized_tickers = [normalize_ticker(ticker) for ticker in tickers]
+    normalized_tickers = list(dict.fromkeys(normalized_tickers))
+    if not normalized_tickers:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="At least one ticker is required.",
+        )
+
+    settings = mode_settings(mode)
+    sequence_length = int(settings["sequence_length"])
+    paths = shared_model_paths(mode)
+    paths["model"].parent.mkdir(parents=True, exist_ok=True)
+
+    ticker_map = {
+        ticker: ticker_id
+        for ticker_id, ticker in enumerate(normalized_tickers)
+    }
+    prepared_frames = {
+        ticker: prepare_training_frame(ticker, mode)
+        for ticker in normalized_tickers
+    }
+    if not prepared_frames:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="No training data could be prepared.",
+        )
+
+    scaler = MinMaxScaler()
+    scaler.fit(
+        pd.concat(
+            [df[FEATURE_COLUMNS] for df in prepared_frames.values()],
+            axis=0,
+        )
+    )
+
+    X_parts = []
+    y_parts = []
+    ticker_id_parts = []
+    samples_by_ticker = {}
+    for ticker, df in prepared_frames.items():
+        X, y, ticker_ids = make_sequences(
+            df,
+            sequence_length,
+            scaler,
+            ticker_map[ticker],
+        )
+        X_parts.append(X)
+        y_parts.append(y)
+        ticker_id_parts.append(ticker_ids)
+        samples_by_ticker[ticker] = int(len(X))
+
+    X_train = np.concatenate(X_parts, axis=0)
+    y_train = np.concatenate(y_parts, axis=0)
+    ticker_ids_train = np.concatenate(ticker_id_parts, axis=0).reshape(-1, 1)
+
+    if len(np.unique(y_train)) < 2:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Training target has only one class. Try more tickers or more varied data.",
+        )
+
+    model = build_advanced_lstm(
+        (X_train.shape[1], X_train.shape[2]),
+        ticker_count=len(ticker_map),
+    )
+    callbacks = [
+        EarlyStopping(
+            monitor="val_loss",
+            patience=8,
+            restore_best_weights=True,
+        ),
+        ModelCheckpoint(
+            filepath=str(paths["model"]),
+            monitor="val_loss",
+            save_best_only=True,
+        ),
+    ]
+    history = model.fit(
+        {"features": X_train, "ticker_id": ticker_ids_train},
+        y_train,
+        validation_split=0.2,
+        epochs=50,
+        batch_size=32,
+        callbacks=callbacks,
+        verbose=0,
+        shuffle=False,
+    )
+    model.save(paths["model"])
+
+    with paths["scaler"].open("wb") as scaler_file:
+        pickle.dump(scaler, scaler_file)
+    with paths["ticker_map"].open("wb") as ticker_map_file:
+        pickle.dump(ticker_map, ticker_map_file)
+
+    return {
+        "mode": mode,
+        "tickers": normalized_tickers,
+        "samples": int(len(X_train)),
+        "samples_by_ticker": samples_by_ticker,
+        "model_path": str(paths["model"]),
+        "scaler_path": str(paths["scaler"]),
+        "ticker_map_path": str(paths["ticker_map"]),
+        "epochs_trained": len(history.history.get("loss", [])),
+    }
+
+
+def load_saved_model_scaler_and_ticker_map(mode: Mode):
+    paths = shared_model_paths(mode)
+    if (
+        not paths["model"].exists()
+        or not paths["scaler"].exists()
+        or not paths["ticker_map"].exists()
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Shared {mode} model not found. Please train it first.",
+        )
+
+    model = load_model(paths["model"])
+    with paths["scaler"].open("rb") as scaler_file:
+        scaler = pickle.load(scaler_file)
+    with paths["ticker_map"].open("rb") as ticker_map_file:
+        ticker_map = pickle.load(ticker_map_file)
+    return model, scaler, ticker_map
+
+
+def generate_trade_decision(signal: Dict[str, float]) -> str:
+    probability = signal["predicted_probability"]
+    current_price = signal["current_price"]
+    rsi = signal["RSI"]
+    ema_20 = signal["EMA_20"]
+    ema_50 = signal["EMA_50"]
+
+    if probability >= 0.65 and current_price > ema_20 > ema_50 and rsi < 70:
+        return "BUY"
+    if probability <= 0.35 and current_price < ema_20 < ema_50 and rsi > 30:
+        return "SELL"
+    return "HOLD"
+
+
+def predict_for_ticker(ticker: str, mode: Mode) -> Dict[str, float | str]:
+    ticker = normalize_ticker(ticker)
+    settings = mode_settings(mode)
+    sequence_length = int(settings["sequence_length"])
+    model, scaler, ticker_map = load_saved_model_scaler_and_ticker_map(mode)
+    if ticker not in ticker_map:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Ticker {ticker} was not included in the shared {mode} model. Please train it first.",
+        )
+
+    df = download_market_data(ticker, mode, for_training=False)
+    df = add_features(df)
+    if len(df) < sequence_length:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Not enough latest data for {ticker}; need at least {sequence_length} candles.",
+        )
+
+    latest_features = df[FEATURE_COLUMNS].tail(sequence_length)
+    scaled_features = scaler.transform(latest_features)
+    X = np.expand_dims(scaled_features, axis=0)
+    ticker_id = np.asarray([[ticker_map[ticker]]])
+    probability = float(
+        model.predict(
+            {"features": X, "ticker_id": ticker_id},
+            verbose=0,
+        )[0][0]
+    )
+    latest = df.iloc[-1]
+
+    signal = {
+        "ticker": ticker,
+        "mode": mode,
+        "ticker_id": int(ticker_map[ticker]),
+        "predicted_probability": probability,
+        "current_price": float(latest["Close"]),
+        "RSI": float(latest["RSI"]),
+        "EMA_20": float(latest["EMA_20"]),
+        "EMA_50": float(latest["EMA_50"]),
+        "ATR": float(latest["ATR"]),
+    }
+    signal["decision"] = generate_trade_decision(signal)
+    return signal
+
+
+def place_bracket_order(
+    ticker: str,
+    decision: str,
+    current_price: float,
+    atr: float,
+    api_key: str,
+    api_secret: str,
+) -> Dict:
+    if decision == "BUY":
+        side = OrderSide.BUY
+        take_profit_price = current_price + 2 * atr
+        stop_loss_price = current_price - atr
+    elif decision == "SELL":
+        side = OrderSide.SELL
+        take_profit_price = current_price - 2 * atr
+        stop_loss_price = current_price + atr
+    else:
+        return {"ticker": ticker, "message": "HOLD: no order placed."}
+
+    if take_profit_price <= 0 or stop_loss_price <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Invalid ATR bracket prices for {ticker}.",
+        )
+
+    client = TradingClient(api_key, api_secret, paper=True)
+    order_request = MarketOrderRequest(
+        symbol=ticker,
+        qty=1,
+        side=side,
+        time_in_force=TimeInForce.DAY,
+        order_class=OrderClass.BRACKET,
+        take_profit=TakeProfitRequest(limit_price=round(take_profit_price, 2)),
+        stop_loss=StopLossRequest(stop_price=round(stop_loss_price, 2)),
+    )
+    order = client.submit_order(order_request)
+    if hasattr(order, "model_dump"):
+        return order.model_dump(mode="json")
+    return order.dict()
+
+
+def train_for_tickers(tickers: List[str], mode: Mode) -> Dict[str, List[Dict]]:
+    if not tickers:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="At least one ticker is required.",
+        )
+
+    return {"mode": mode, "trained": train_model_for_tickers(tickers, mode)}
+
+
+def execute_for_tickers(
+    tickers: List[str],
+    mode: Mode,
+    api_key: str,
+    api_secret: str,
+) -> Dict[str, List[Dict]]:
+    if not tickers:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="At least one ticker is required.",
+        )
+
+    results = []
+    for ticker in tickers:
+        signal = predict_for_ticker(ticker, mode)
+        if signal["decision"] == "HOLD":
+            results.append({**signal, "message": "HOLD: no order placed."})
+            continue
+
+        order = place_bracket_order(
+            ticker=signal["ticker"],
+            decision=signal["decision"],
+            current_price=signal["current_price"],
+            atr=signal["ATR"],
+            api_key=api_key,
+            api_secret=api_secret,
+        )
+        results.append({**signal, "order": order})
+    return {"mode": mode, "results": results}
+
+
+@router.post("/train/daily", status_code=status.HTTP_201_CREATED)
+def train_daily(request: schemas.TrainRequest):
+    return train_for_tickers(request.tickers, "daily")
+
+
+@router.post("/train/intraday", status_code=status.HTTP_201_CREATED)
+def train_intraday(request: schemas.TrainRequest):
+    return train_for_tickers(request.tickers, "intraday")
+
+
+@router.post("/predict/daily")
+def predict_daily(request: schemas.PredictRequest):
+    return predict_for_ticker(request.ticker, "daily")
+
+
+@router.post("/predict/intraday")
+def predict_intraday(request: schemas.PredictRequest):
+    return predict_for_ticker(request.ticker, "intraday")
+
+
+@router.post("/execute/daily")
+def execute_daily(request: schemas.ExecuteTradeRequest):
+    return execute_for_tickers(
+        request.tickers,
+        "daily",
+        request.api_key,
+        request.api_secret,
+    )
+
+
+@router.post("/execute/intraday")
+def execute_intraday(request: schemas.ExecuteTradeRequest):
+    return execute_for_tickers(
+        request.tickers,
+        "intraday",
+        request.api_key,
+        request.api_secret,
+    )

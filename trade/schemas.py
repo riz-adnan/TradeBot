@@ -42,3 +42,14 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     username: Optional[str] = None
+
+class TrainRequest(BaseModel):
+    tickers: List[str]
+
+class PredictRequest(BaseModel):
+    ticker: str
+
+class ExecuteTradeRequest(BaseModel):
+    tickers: List[str]
+    api_key: str
+    api_secret: str

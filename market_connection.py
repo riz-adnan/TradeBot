@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import pandas_ta as ta
 import time
 import yfinance as yf
