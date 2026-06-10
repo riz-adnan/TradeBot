@@ -1,8 +1,6 @@
-from sqlalchemy.orm import Session
 from .. import mongodb, schemas
 from fastapi import HTTPException, status
 from ..hashing import Hash
-from bson.objectid import ObjectId
 
 users = mongodb.users
 user_helper = mongodb.user_helper
