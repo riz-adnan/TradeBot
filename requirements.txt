@@ -5,8 +5,8 @@ bcrypt
 dnspython
 certifi
 email-validator
-fastapi==0.103.2
-passlib==1.7.4
+fastapi
+passlib
 pydantic
 pymongo
 python-dotenv
