@@ -33,7 +33,6 @@ export default function DefaultLayout({
 
       </main>
 
-      <Footer />
     </>
   )
 }

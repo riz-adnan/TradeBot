@@ -20,6 +20,7 @@ except Exception as e:
 
 database = client.trade
 users = database.get_collection("users")
+trade_logs = database.get_collection("trade_logs")
 
 
 class UserBase(BaseModel):

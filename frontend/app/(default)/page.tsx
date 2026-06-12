@@ -29,11 +29,11 @@ export default function Home() {
           <div>
             <Eyebrow>1st Prize Winner — Blaze.ai ML Hackathon</Eyebrow>
             <h1 className="max-w-4xl text-4xl font-black leading-tight text-white sm:text-5xl lg:text-6xl">
-              AlphaQuant: LSTM Attention trading intelligence for daily and high-frequency trading and signals
+              AlphaQuant: LSTM Attention trading intelligence for daily and high-frequency automated trading and signals
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-300">
               This project uses an LSTM + Attention based architecture to analyze market
-              time-series data and generate prediction signals for daily and high-frequency trading.
+              time-series data and generate prediction signals for daily and high-frequency automated trading.
             </p>
             <p className="mt-5 max-w-2xl rounded-lg border border-amber-300/30 bg-amber-400/10 p-4 text-sm leading-6 text-amber-100">
               This project is for educational and paper-trading purposes only. It is not financial advice.
@@ -44,12 +44,12 @@ export default function Home() {
               <SecondaryLink href="/trade">Paper Trade</SecondaryLink>
             </div>
             <a
-              href={portfolioUrl}
+              href="https://github.com/riz-adnan/TradeBot"
               target="_blank"
               rel="noreferrer"
               className="mt-6 inline-flex text-sm font-semibold text-emerald-200 hover:text-emerald-100"
             >
-              Portfolio: adnanrizvi.netlify.app
+              Documentation: https://github.com/riz-adnan/TradeBot
             </a>
           </div>
 

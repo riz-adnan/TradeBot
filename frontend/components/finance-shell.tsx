@@ -127,7 +127,7 @@ export function SiteFooter() {
           <a className="hover:text-emerald-200" href={portfolioUrl} target="_blank" rel="noreferrer">
             Portfolio
           </a>
-          <a className="hover:text-emerald-200" href={githubUrl} target="_blank" rel="noreferrer">
+          <a className="hover:text-emerald-200" href="https://github.com/riz-adnan" target="_blank" rel="noreferrer">
             GitHub
           </a>
         </div>

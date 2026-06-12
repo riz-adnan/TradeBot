@@ -52,12 +52,12 @@ export default function Header() {
               ))}
               <li>
                 <a
-                  href={portfolioUrl}
+                  href="https://github.com/riz-adnan/TradeBot"
                   target="_blank"
                   rel="noreferrer"
                   className="rounded-lg border border-emerald-300/30 bg-emerald-400/10 px-4 py-2 text-sm font-semibold text-emerald-100 transition hover:bg-emerald-400/20"
                 >
-                  Portfolio
+                  Documentation
                 </a>
               </li>
             </ul>

@@ -12,6 +12,12 @@ from fastapi import APIRouter, HTTPException, status
 import requests
 
 from .. import schemas
+from ..trading_scheduler import (
+    get_scheduler_status,
+    run_auto_trade_scan,
+    start_scheduler,
+    stop_scheduler,
+)
 
 
 router = APIRouter(prefix="/trading", tags=["trading"])
@@ -198,3 +204,23 @@ def execute_intraday(request: schemas.ExecuteTradeRequest):
         request.api_key,
         request.api_secret,
     )
+
+
+@router.get("/auto/status")
+def auto_trading_status():
+    return get_scheduler_status()
+
+
+@router.post("/auto/run-once")
+def auto_trading_run_once():
+    return run_auto_trade_scan(force=True)
+
+
+@router.post("/auto/start")
+def auto_trading_start():
+    return start_scheduler()
+
+
+@router.post("/auto/stop")
+def auto_trading_stop():
+    return stop_scheduler()

@@ -4,28 +4,28 @@ export const githubUrl = "https://github.com/riz-adnan/TradeBot";
 export const roiImages = [
   {
     src: "/images/test1.png",
-    title: "ROI Snapshot I",
-    caption: "Backtested signal performance from the ML trading workflow.",
+    title: "Adnan Rizvi Portfolio",
+    caption: "12% growth from Dec 24 - March 25",
   },
   {
     src: "/images/test2.png",
-    title: "ROI Snapshot II",
-    caption: "Model behavior under a separate ticker and market regime.",
+    title: "Prakhar Moses Portfolio",
+    caption: "10% growth from Dec 24 - March 25.",
   },
   {
     src: "/images/test3.png",
-    title: "ROI Snapshot III",
-    caption: "Paper-trading research output presented from the project archive.",
+    title: "Nandhvardhan Portfolio",
+    caption: "14% growth from Dec 24 - March 25",
   },
   {
     src: "/images/test4.png",
-    title: "ROI Snapshot IV",
-    caption: "Additional return curve evidence from the existing project assets.",
+    title: "Vaibhav Mishra Portfolio",
+    caption: "12% growth from Dec 24 - March 25",
   },
   {
     src: "/images/test5.png",
-    title: "ROI Snapshot V",
-    caption: "Validation visual retained from the original hackathon work.",
+    title: "Adarsh Dwivedi Portfolio",
+    caption: "11% growth from Dec 24 - March 25",
   },
 ];
 
@@ -44,5 +44,6 @@ export const methodologyPoints = [
   "Daily model predicts next-day movement",
   "Intraday model predicts short-term 5-minute or 15-minute movement",
   "Backend returns decision, confidence, RSI, EMA, ATR, and current price",
+  "If registered under trade, backend automatically executes trade for the registered users"
 ];
 

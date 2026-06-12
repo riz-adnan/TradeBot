@@ -1,5 +1,6 @@
 alpaca-py==0.12.0
 anyio
+apscheduler
 bcrypt
 dnspython
 email-validator
