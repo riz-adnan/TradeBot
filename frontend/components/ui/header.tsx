@@ -3,90 +3,63 @@ import MobileMenu from './mobile-menu'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 
-// Importting Context
-import { useAccount } from '@/context/AccountContext'
+import { portfolioUrl } from '@/lib/content'
 
 export default function Header() {
   const pathname = usePathname()
-  const { accountId, logout } = useAccount()
 
   function findActiveLink(path: string) {
-    return pathname === path ? 'text-yellow-400' : 'text-purple-600'
+    return pathname === path ? 'text-emerald-200 bg-white/10' : 'text-slate-300 hover:text-white hover:bg-white/5'
   }
 
+  const navItems = [
+    { href: '/', label: 'Home' },
+    { href: '/prediction', label: 'Prediction' },
+    { href: '/trade', label: 'Trade' },
+    { href: '/achievements', label: 'Achievements' },
+  ]
+
   return (
-    <header className="absolute w-full z-30">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+    <header className="fixed top-0 w-full z-30 border-b border-white/10 bg-[#05070d]/80 backdrop-blur-xl">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
-          {/* Site branding */}
           <div className="shrink-0 mr-4">
-            {/* Logo */}
-            <Link href="/" className="block" aria-label="Cruip">
+            <Link href="/" className="flex items-center gap-3" aria-label="Trading ML home">
               <Image
-                src="/images/logo.png"
+                src="/images/Logo.png"
                 alt="Logo"
-                width={128}
-                height={20}
-                className='rounded-xl h-14'
+                width={44}
+                height={44}
+                className="h-11 w-11 rounded-lg object-cover"
               />
+              <span className="hidden text-sm font-bold uppercase tracking-wide text-white sm:block">
+                AlphaQuant
+              </span>
             </Link>
           </div>
 
-          {/* Desktop navigation */}
           <nav className="hidden md:flex md:grow">
-            {/* Desktop sign in links */}
-            <ul className="flex grow justify-end flex-wrap items-center">
-              <li>
-                <Link
-                  href="/"
-                  className={`font-medium hover:text-gray-200 px-4 py-3 flex items-center transition duration-150 ease-in-out ${findActiveLink('/')}`}
-                >
-                  Home
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/wallet"
-                  className={`font-medium hover:text-gray-200 px-4 py-3 flex items-center transition duration-150 ease-in-out ${findActiveLink('/wallet')}`}
-                >
-                  Wallet
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/trade"
-                  className={`font-medium hover:text-gray-200 px-4 py-3 flex items-center transition duration-150 ease-in-out ${findActiveLink('/trade')}`}
-                >
-                  Trade
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/ourPrediction"
-                  className={`font-medium hover:text-gray-200 px-4 py-3 flex items-center transition duration-150 ease-in-out ${findActiveLink('/ourPrediction')}`}
-                >
-                  Our Predictions
-                </Link>
-              </li>
-              {accountId && accountId !== '' ? (<>
-                
-                <li>
-                  <button
-                    onClick={logout}
-                    className="font-medium hover:text-gray-200 px-4 py-3 flex items-center transition duration-150 ease-in-out text-yellow-400"
-                  >Log Out</button>
+            <ul className="flex grow justify-end flex-wrap items-center gap-2">
+              {navItems.map((item) => (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${findActiveLink(item.href)}`}
+                  >
+                    {item.label}
+                  </Link>
                 </li>
-              </>) : (
-              <><li>
-                <Link
-                  href="/signin"
-                  className="font-medium hover:text-gray-200 px-4 py-3 flex items-center transition duration-150 ease-in-out text-yellow-400"
+              ))}
+              <li>
+                <a
+                  href={portfolioUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-lg border border-emerald-300/30 bg-emerald-400/10 px-4 py-2 text-sm font-semibold text-emerald-100 transition hover:bg-emerald-400/20"
                 >
-                  Sign in
-                </Link>
+                  Portfolio
+                </a>
               </li>
-                
-              </>)}
             </ul>
           </nav>
 

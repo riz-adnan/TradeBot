@@ -4,11 +4,9 @@ import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
-// Importing Context
-import { useAccount } from '@/context/AccountContext'
+import { portfolioUrl } from '@/lib/content'
 
 export default function MobileMenu() {
-  const { accountId } = useAccount()
   const pathname = usePathname()
 
   const [mobileNavOpen, setMobileNavOpen] = useState<boolean>(false)
@@ -39,8 +37,15 @@ export default function MobileMenu() {
 
   // To show the current active link
   function findActiveLink(path: string) {
-    return pathname === path ? 'text-yellow-400' : 'text-purple-600'
+    return pathname === path ? 'text-emerald-200 bg-white/10' : 'text-slate-300'
   }
+
+  const navItems = [
+    { href: '/', label: 'Home' },
+    { href: '/prediction', label: 'Prediction' },
+    { href: '/trade', label: 'Trade' },
+    { href: '/achievements', label: 'Achievements' },
+  ]
 
   return (
     <div className="md:hidden">
@@ -71,63 +76,29 @@ export default function MobileMenu() {
         className="absolute top-full z-20 left-0 w-full px-4 sm:px-6 overflow-hidden transition-all duration-300 ease-in-out"
         style={mobileNavOpen ? { maxHeight: mobileNav.current?.scrollHeight, opacity: 1 } : { maxHeight: 0, opacity: 0.8 }}
       >
-        <ul className="bg-gray-800 px-4 py-2">
-          <li>
-            <Link
-              href="/"
-              className={`font-medium hover:text-gray-200 px-4 py-3 flex items-center transition duration-150 ease-in-out ${findActiveLink('/')}`}
-            >
-              Home
-            </Link>
-          </li>
-          <li>
-            <Link
-              href="/wallet"
-              className={`font-medium hover:text-gray-200 px-4 py-3 flex items-center transition duration-150 ease-in-out ${findActiveLink('/wallet')}`}
-            >
-              Wallet
-            </Link>
-          </li>
-          <li>
-            <Link
-              href="/trade"
-              className={`font-medium hover:text-gray-200 px-4 py-3 flex items-center transition duration-150 ease-in-out ${findActiveLink('/trade')}`}
-            >
-              Trade
-            </Link>
-          </li>
-          <li>
-            <Link
-              href="/ourPrediction"
-              className={`font-medium hover:text-gray-200 px-4 py-3 flex items-center transition duration-150 ease-in-out ${findActiveLink('/ourPrediction')}`}
-            >
-              Our Predictions
-            </Link>
-          </li>
-          {/* {jwtToken !== '' && <li>
-            <Link
-              href={`/profile/${accountId}`}
-              className={`font-medium hover:text-gray-200 px-4 py-3 flex items-center transition duration-150 ease-in-out ${findActiveLink(`/profile/${accountId}`)}`}
-            >
-              Profile
-            </Link>
-          </li>} */}
-          {/* {jwtToken === '' && <><li>
-            <Link
-              href="/signin"
-              className="flex font-medium w-full text-purple-600 hover:text-gray-200 py-2 justify-center" onClick={() => setMobileNavOpen(false)}
-            >
-              Sign in
-            </Link>
-          </li>
-            <li>
+        <ul className="rounded-b-2xl border border-white/10 bg-slate-950/95 px-4 py-3 shadow-2xl shadow-black/40">
+          {navItems.map((item) => (
+            <li key={item.href}>
               <Link
-                href="/signup"
-                className="font-medium w-full inline-flex items-center justify-center border border-transparent px-4 py-2 my-2 rounded-sm text-white bg-purple-600 hover:bg-purple-700 transition duration-150 ease-in-out" onClick={() => setMobileNavOpen(false)}
+                href={item.href}
+                className={`my-1 flex rounded-lg px-4 py-3 text-sm font-semibold transition hover:bg-white/5 hover:text-white ${findActiveLink(item.href)}`}
+                onClick={() => setMobileNavOpen(false)}
               >
-                Sign up
+                {item.label}
               </Link>
-            </li></>} */}
+            </li>
+          ))}
+          <li>
+            <a
+              href={portfolioUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="my-1 flex rounded-lg px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:bg-emerald-400/10"
+              onClick={() => setMobileNavOpen(false)}
+            >
+              Portfolio
+            </a>
+          </li>
         </ul>
       </nav>
     </div>
