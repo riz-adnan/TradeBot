@@ -3,7 +3,7 @@ anyio
 apscheduler
 bcrypt
 dnspython
-certify
+certifi
 email-validator
 fastapi==0.103.2
 passlib==1.7.4
