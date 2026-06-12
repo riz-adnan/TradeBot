@@ -1,5 +1,6 @@
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
+import certifi
 import os
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field, EmailStr
@@ -9,7 +10,8 @@ mongo_uri = os.getenv("MONGO_URI")
 print("Connecting to MongoDB...")
 
 # Create a new client and connect to the server
-client = MongoClient(mongo_uri, server_api=ServerApi('1'))
+client = MongoClient(mongo_uri, tls=True,
+    tlsCAFile=certifi.where(), server_api=ServerApi('1'))
 
 # Send a ping to confirm a successful connection
 try:
